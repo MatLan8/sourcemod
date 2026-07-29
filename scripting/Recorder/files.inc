@@ -11,30 +11,34 @@ public Action Command_StartRecording(int client, int args)
         return Plugin_Handled;
     }
 
-    g_PositionFile = OpenFile("addons/sourcemod/data/position.csv", "w");
-    g_VelocityFile = OpenFile("addons/sourcemod/data/velocity.csv", "w");
-    g_AnglesFile = OpenFile("addons/sourcemod/data/angles.csv", "w");
-    g_MovementFile = OpenFile("addons/sourcemod/data/movement.csv", "w");
-    g_StateFile = OpenFile("addons/sourcemod/data/state.csv", "w");
-    g_RocketFile = OpenFile("addons/sourcemod/data/rocket.csv", "w");
+    GetCmdArg(
+        1,
+        g_RecordName,
+        sizeof(g_RecordName)
+    );
 
-    if (g_PositionFile == INVALID_HANDLE ||
-        g_VelocityFile == INVALID_HANDLE ||
-        g_AnglesFile == INVALID_HANDLE ||
-        g_MovementFile == INVALID_HANDLE ||
-        g_StateFile == INVALID_HANDLE ||
-        g_RocketFile == INVALID_HANDLE)
+
+    char path[256];
+
+    Format(
+        path,
+        sizeof(path),
+        "addons/sourcemod/data/%s.csv",
+        g_RecordName
+    );
+
+
+    g_RecordingFile = OpenFile(path, "w");
+
+    if (g_RecordingFile == INVALID_HANDLE)
     {
-        ReplyToCommand(client, "[Recorder] Failed opening files");
+        ReplyToCommand(client, "[Recorder] Failed opening recording.csv");
         return Plugin_Handled;
     }
 
-    WriteFileLine(g_PositionFile, "tick,x,y,z");
-    WriteFileLine(g_VelocityFile, "tick,vx,vy,vz");
-    WriteFileLine(g_AnglesFile, "tick,pitch,yaw");
-    WriteFileLine(g_MovementFile, "tick,forward,left,jump,duck,attack");
-    WriteFileLine(g_StateFile, "tick,grounded,water,ammo,rocket_fired");
-    WriteFileLine(g_RocketFile, "tick,rocket_id,spawn_tick,owner,x,y,z,vx,vy,vz,exploded,explosion_tick,explosion_x,explosion_y,explosion_z");
+    ResetRocketSlots();
+    ResetRocketFiredEvents();
+    WriteRecordingHeader();
 
     g_Recording = true;
 
@@ -59,39 +63,50 @@ public Action Command_StopRecording(int client, int args)
 
 void CloseFiles()
 {
-    if (g_PositionFile != INVALID_HANDLE)
+    if (g_RecordingFile != INVALID_HANDLE)
     {
-        CloseHandle(g_PositionFile);
-        g_PositionFile = INVALID_HANDLE;
+        CloseHandle(g_RecordingFile);
+        g_RecordingFile = INVALID_HANDLE;
+    }
+}
+
+void WriteRecordingHeader()
+{
+    char header[8192];
+    char rocketHeader[512];
+
+    strcopy(header, sizeof(header), "tick,player_position_x,player_position_y,player_position_z,player_velocity_x,player_velocity_y,player_velocity_z,player_view_pitch,player_view_yaw,player_grounded,player_water_level,player_ammo,input_forward,input_backward,input_left,input_right,input_jump,input_duck,input_attack,event_rocket_fired");
+
+    for (int i = 0; i < MAX_ROCKET_SLOTS; i++)
+    {
+        Format(rocketHeader, sizeof(rocketHeader), ",rocket_%d_exists,rocket_%d_id,rocket_%d_spawn_tick,rocket_%d_position_x,rocket_%d_position_y,rocket_%d_position_z,rocket_%d_velocity_x,rocket_%d_velocity_y,rocket_%d_velocity_z,rocket_%d_spawn_pitch,rocket_%d_spawn_yaw,rocket_%d_exploded,rocket_%d_explosion_position_x,rocket_%d_explosion_position_y,rocket_%d_explosion_position_z", i, i, i, i, i, i, i, i, i, i, i, i, i, i, i);
+        StrCat(header, sizeof(header), rocketHeader);
     }
 
-    if (g_VelocityFile != INVALID_HANDLE)
+    WriteFileLine(g_RecordingFile, "%s", header);
+}
+
+void WriteRecordingRow(int tick, PlayerSnapshot player, PlayerInput input, bool rocketFired)
+{
+    char row[8192];
+    char rocketRow[512];
+
+    Format(row, sizeof(row), "%d,%.3f,%.3f,%.3f,%.3f,%.3f,%.3f,%.3f,%.3f,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d", tick, player.position[0], player.position[1], player.position[2], player.velocity[0], player.velocity[1], player.velocity[2], player.viewAngles[0], player.viewAngles[1], player.grounded, player.waterLevel, player.ammo, input.pressedForward, input.pressedBackward, input.pressedLeft, input.pressedRight, input.pressedJump, input.pressedDuck, input.pressedAttack, rocketFired);
+
+    for (int i = 0; i < MAX_ROCKET_SLOTS; i++)
     {
-        CloseHandle(g_VelocityFile);
-        g_VelocityFile = INVALID_HANDLE;
+        if (g_RocketSlots[i].exists)
+        {
+            Format(rocketRow, sizeof(rocketRow), ",%d,%d,%d,%.3f,%.3f,%.3f,%.3f,%.3f,%.3f,%.3f,%.3f,%d,%.3f,%.3f,%.3f", 1, g_RocketSlots[i].id, g_RocketSlots[i].spawnTick, g_RocketSlots[i].position[0], g_RocketSlots[i].position[1], g_RocketSlots[i].position[2], g_RocketSlots[i].velocity[0], g_RocketSlots[i].velocity[1], g_RocketSlots[i].velocity[2], g_RocketSlots[i].spawnPitch, g_RocketSlots[i].spawnYaw, g_RocketSlots[i].exploded, g_RocketSlots[i].explosionPosition[0], g_RocketSlots[i].explosionPosition[1], g_RocketSlots[i].explosionPosition[2]);
+        }
+        else
+        {
+            strcopy(rocketRow, sizeof(rocketRow), ",0,0,0,0,0,0,0,0,0,0,0,0,0,0,0");
+        }
+
+        StrCat(row, sizeof(row), rocketRow);
     }
 
-    if (g_AnglesFile != INVALID_HANDLE)
-    {
-        CloseHandle(g_AnglesFile);
-        g_AnglesFile = INVALID_HANDLE;
-    }
-
-    if (g_MovementFile != INVALID_HANDLE)
-    {
-        CloseHandle(g_MovementFile);
-        g_MovementFile = INVALID_HANDLE;
-    }
-
-    if (g_StateFile != INVALID_HANDLE)
-    {
-        CloseHandle(g_StateFile);
-        g_StateFile = INVALID_HANDLE;
-    }
-
-    if (g_RocketFile != INVALID_HANDLE)
-    {
-        CloseHandle(g_RocketFile);
-        g_RocketFile = INVALID_HANDLE;
-    }
+    WriteFileLine(g_RecordingFile, "%s", row);
+    FlushFile(g_RecordingFile);
 }

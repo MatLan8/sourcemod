@@ -15,7 +15,14 @@ void HandleRocketEntityCreated(int entity, const char[] classname)
 
 public void RocketSpawned(int entity)
 {
-    if (!IsValidEntity(entity) || g_RocketCount >= 2048)
+    if (!IsValidEntity(entity))
+    {
+        return;
+    }
+
+    int slot = FindFreeRocketSlot();
+
+    if (slot == -1)
     {
         return;
     }
@@ -29,30 +36,38 @@ public void RocketSpawned(int entity)
 
     SDKHook(entity, SDKHook_StartTouch, RocketTouch);
 
-    g_Rockets[g_RocketCount].entity = EntIndexToEntRef(entity);
-    g_Rockets[g_RocketCount].id = g_NextRocketID++;
-    g_Rockets[g_RocketCount].owner = owner;
-    g_Rockets[g_RocketCount].spawnTick = GetGameTickCount();
-    g_Rockets[g_RocketCount].exploded = false;
-    g_Rockets[g_RocketCount].explosionTick = 0;
-    g_Rockets[g_RocketCount].explosionPos[0] = 0.0;
-    g_Rockets[g_RocketCount].explosionPos[1] = 0.0;
-    g_Rockets[g_RocketCount].explosionPos[2] = 0.0;
-
-    g_RocketCount++;
+    float spawnAngles[3];
+    g_RocketSlots[slot].exists = true;
+    g_RocketSlots[slot].entity = EntIndexToEntRef(entity);
+    g_RocketSlots[slot].id = g_NextRocketID++;
+    g_RocketSlots[slot].spawnTick = GetGameTickCount();
+    GetEntPropVector(entity, Prop_Send, "m_vecOrigin", g_RocketSlots[slot].position);
+    GetEntPropVector(entity, Prop_Data, "m_vecVelocity", g_RocketSlots[slot].velocity);
+    GetEntPropVector(entity, Prop_Send, "m_angRotation", spawnAngles);
+    g_RocketSlots[slot].spawnPitch = spawnAngles[0];
+    g_RocketSlots[slot].spawnYaw = spawnAngles[1];
+    g_RocketSlots[slot].exploded = false;
+    g_RocketSlots[slot].explosionPosition[0] = 0.0;
+    g_RocketSlots[slot].explosionPosition[1] = 0.0;
+    g_RocketSlots[slot].explosionPosition[2] = 0.0;
+    g_RocketSlots[slot].clearAfterRecord = false;
 }
 
 public Action RocketTouch(int rocket, int other)
 {
-    for (int i = 0; i < g_RocketCount; i++)
+    for (int i = 0; i < MAX_ROCKET_SLOTS; i++)
     {
-        int entity = EntRefToEntIndex(g_Rockets[i].entity);
+        int entity = EntRefToEntIndex(g_RocketSlots[i].entity);
 
-        if (entity == rocket)
+        if (g_RocketSlots[i].exists && entity == rocket)
         {
-            GetEntPropVector(rocket, Prop_Send, "m_vecOrigin", g_Rockets[i].explosionPos);
-            g_Rockets[i].exploded = true;
-            g_Rockets[i].explosionTick = GetGameTickCount();
+            GetEntPropVector(rocket, Prop_Send, "m_vecOrigin", g_RocketSlots[i].explosionPosition);
+            g_RocketSlots[i].position = g_RocketSlots[i].explosionPosition;
+            g_RocketSlots[i].velocity[0] = 0.0;
+            g_RocketSlots[i].velocity[1] = 0.0;
+            g_RocketSlots[i].velocity[2] = 0.0;
+            g_RocketSlots[i].exploded = true;
+            g_RocketSlots[i].clearAfterRecord = true;
             break;
         }
     }
@@ -60,83 +75,84 @@ public Action RocketTouch(int rocket, int other)
     return Plugin_Continue;
 }
 
-public Action Timer_ProcessRocket(Handle timer, int ref)
+int FindFreeRocketSlot()
 {
-    int entity = EntRefToEntIndex(ref);
-
-    if (entity == INVALID_ENT_REFERENCE || g_RocketFile == INVALID_HANDLE)
+    for (int i = 0; i < MAX_ROCKET_SLOTS; i++)
     {
-        return Plugin_Stop;
+        if (!g_RocketSlots[i].exists)
+        {
+            return i;
+        }
     }
 
-    int owner = GetEntPropEnt(entity, Prop_Send, "m_hOwnerEntity");
-
-    if (owner <= 0 || owner > MaxClients || !IsClientInGame(owner))
-    {
-        return Plugin_Stop;
-    }
-
-    float pos[3];
-    float vel[3];
-    GetEntPropVector(entity, Prop_Send, "m_vecOrigin", pos);
-    GetEntPropVector(entity, Prop_Data, "m_vecVelocity", vel);
-
-    WriteFileLine(g_RocketFile, "%d,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f,%d", GetGameTickCount(), pos[0], pos[1], pos[2], vel[0], vel[1], vel[2], owner);
-    FlushFile(g_RocketFile);
-
-    g_RocketFired[owner] = true;
-    return Plugin_Stop;
+    return -1;
 }
 
-void RecordRockets()
+void UpdateRocketSlots()
 {
-    if (g_RocketFile == INVALID_HANDLE)
+    for (int i = 0; i < MAX_ROCKET_SLOTS; i++)
     {
-        return;
-    }
-
-    int tick = GetGameTickCount();
-
-    for (int i = 0; i < g_RocketCount; i++)
-    {
-        int entity = EntRefToEntIndex(g_Rockets[i].entity);
-
-        if (entity == INVALID_ENT_REFERENCE)
+        if (!g_RocketSlots[i].exists || g_RocketSlots[i].exploded)
         {
-            if (!g_Rockets[i].exploded)
-            {
-                g_Rockets[i].exploded = true;
-                g_Rockets[i].explosionTick = tick;
-            }
-
-            WriteExplosionFrame(i);
-            RemoveRocket(i);
-            i--;
             continue;
         }
 
-        float pos[3];
-        float vel[3];
-        GetEntPropVector(entity, Prop_Send, "m_vecOrigin", pos);
-        GetEntPropVector(entity, Prop_Data, "m_vecVelocity", vel);
+        int entity = EntRefToEntIndex(g_RocketSlots[i].entity);
 
-        WriteFileLine(g_RocketFile, "%d,%d,%d,%d,%.3f,%.3f,%.3f,%.3f,%.3f,%.3f,%d,%d,%.3f,%.3f,%.3f", tick, g_Rockets[i].id, g_Rockets[i].spawnTick, g_Rockets[i].owner, pos[0], pos[1], pos[2], vel[0], vel[1], vel[2], 0, 0, 0.0, 0.0, 0.0);
+        if (entity == INVALID_ENT_REFERENCE)
+        {
+            g_RocketSlots[i].exploded = true;
+            g_RocketSlots[i].explosionPosition = g_RocketSlots[i].position;
+            g_RocketSlots[i].velocity[0] = 0.0;
+            g_RocketSlots[i].velocity[1] = 0.0;
+            g_RocketSlots[i].velocity[2] = 0.0;
+            g_RocketSlots[i].clearAfterRecord = true;
+            continue;
+        }
+
+        GetEntPropVector(entity, Prop_Send, "m_vecOrigin", g_RocketSlots[i].position);
+        GetEntPropVector(entity, Prop_Data, "m_vecVelocity", g_RocketSlots[i].velocity);
     }
-
-    FlushFile(g_RocketFile);
 }
 
-void RemoveRocket(int index)
+void ClearFinishedRocketSlots()
 {
-    for (int i = index; i < g_RocketCount - 1; i++)
+    for (int i = 0; i < MAX_ROCKET_SLOTS; i++)
     {
-        g_Rockets[i] = g_Rockets[i + 1];
+        if (g_RocketSlots[i].exists && g_RocketSlots[i].clearAfterRecord)
+        {
+            ClearRocketSlot(i);
+        }
     }
-
-    g_RocketCount--;
 }
 
-void WriteExplosionFrame(int index)
+void ResetRocketSlots()
 {
-    WriteFileLine(g_RocketFile, "%d,%d,%d,%d,0,0,0,0,0,0,%d,%d,%.3f,%.3f,%.3f", GetGameTickCount(), g_Rockets[index].id, g_Rockets[index].spawnTick, g_Rockets[index].owner, 1, g_Rockets[index].explosionTick, g_Rockets[index].explosionPos[0], g_Rockets[index].explosionPos[1], g_Rockets[index].explosionPos[2]);
+    for (int i = 0; i < MAX_ROCKET_SLOTS; i++)
+    {
+        ClearRocketSlot(i);
+    }
+
+    g_NextRocketID = 1;
+}
+
+void ClearRocketSlot(int slot)
+{
+    g_RocketSlots[slot].exists = false;
+    g_RocketSlots[slot].entity = INVALID_ENT_REFERENCE;
+    g_RocketSlots[slot].id = 0;
+    g_RocketSlots[slot].spawnTick = 0;
+    g_RocketSlots[slot].position[0] = 0.0;
+    g_RocketSlots[slot].position[1] = 0.0;
+    g_RocketSlots[slot].position[2] = 0.0;
+    g_RocketSlots[slot].velocity[0] = 0.0;
+    g_RocketSlots[slot].velocity[1] = 0.0;
+    g_RocketSlots[slot].velocity[2] = 0.0;
+    g_RocketSlots[slot].spawnPitch = 0.0;
+    g_RocketSlots[slot].spawnYaw = 0.0;
+    g_RocketSlots[slot].exploded = false;
+    g_RocketSlots[slot].explosionPosition[0] = 0.0;
+    g_RocketSlots[slot].explosionPosition[1] = 0.0;
+    g_RocketSlots[slot].explosionPosition[2] = 0.0;
+    g_RocketSlots[slot].clearAfterRecord = false;
 }

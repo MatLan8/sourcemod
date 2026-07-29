@@ -12,8 +12,8 @@ public Plugin myinfo =
 {
     name = "Rocket Jump Recorder",
     author = "YourName",
-    description = "Records TF2 movement data for AI training",
-    version = "1.0"
+    description = "Records synchronized TF2 rocket-jump data for AI training",
+    version = "2.0"
 };
 
 public void OnPluginStart()
@@ -45,11 +45,17 @@ public void OnGameFrame()
         return;
     }
 
-    int tick = GetGameTickCount();
+    PlayerSnapshot player;
+    PlayerInput input;
 
-    RecordPlayerData(client, tick);
-    RecordPlayerInput(client, tick);
-    RecordRockets();
+    GatherPlayerSnapshot(client, player);
+    GatherPlayerInput(client, input);
+    UpdateRocketSlots();
+
+    WriteRecordingRow(GetGameTickCount(), player, input, g_RocketFired[client]);
+
+    g_RocketFired[client] = false;
+    ClearFinishedRocketSlots();
 }
 
 public void Event_PlayerSpawn(Event event, const char[] name, bool dontBroadcast)
