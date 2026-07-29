@@ -1,0 +1,14 @@
+# Ignore everything
+*
+
+# Allow Git to traverse directories
+!*/
+
+# Keep this file
+!.gitignore
+
+# Keep the main plugin
+!scripting/Recorder.sp
+
+# Keep the Recorder include folder
+!scripting/Recorder/**
