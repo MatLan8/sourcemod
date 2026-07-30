@@ -7,7 +7,7 @@
 
 bool g_Recording = false;
 Handle g_RecordingFile = INVALID_HANDLE;
-char g_RecordName[128];
+int g_RecordRowNumber = 0;
 
 bool g_RocketFired[MAXPLAYERS + 1];
 int g_PlayerButtons[MAXPLAYERS + 1];

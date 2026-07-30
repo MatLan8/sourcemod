@@ -1,14 +1,17 @@
 # Ignore everything
 *
 
-# Allow Git to traverse directories
+# Allow Git to enter directories
 !*/
 
 # Keep this file
 !.gitignore
 
-# Keep the main plugin
-!scripting/Recorder.sp
+# Keep extension files
+!extensions/
+!extensions/voxel_overlay.ext.2.tf2.dll
+!extensions/voxel_overlay.ext.2.tf2.ext.txt
 
-# Keep the Recorder include folder
-!scripting/Recorder/**
+# Keep scripting directory and contents
+!scripting/
+!scripting/**
