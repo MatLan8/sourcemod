@@ -25,7 +25,9 @@ void DrawVoxelVolume()
 
     if(g_DrawVoxelGrid)
     {
-        DrawVoxelGrid();
+       DrawVoxelCube(1,1,8);
+       DrawVoxelCube(1,2,8);
+       DrawVoxelCube(1,3,8);
     }
 }
 
@@ -113,27 +115,6 @@ void DrawOuterBox()
         min[0],max[1],min[2],
         min[0],max[1],max[2]
     );
-}
-
-
-
-void DrawVoxelGrid()
-{
-
-    for(int x = 0; x < 16; x++)
-    {
-        for(int y = 0; y < 16; y++)
-        {
-            for(int z = 0; z < 8; z++)
-            {
-                DrawVoxelCube(
-                    x,
-                    y,
-                    z
-                );
-            }
-        }
-    }
 }
 
 
