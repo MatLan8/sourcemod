@@ -119,81 +119,23 @@ void DrawOuterBox()
 
 void DrawVoxelGrid()
 {
-    DrawXLines();
-    DrawYLines();
-    DrawZLines();
-    // for(int x = 0; x < g_VoxelCount[0]; x++)
-    // {
-    //     for(int y = 0; y < g_VoxelCount[1]; y++)
-    //     {
-    //         for(int z = 0; z < g_VoxelCount[2]; z++)
-    //         {
-    //             DrawVoxelCube(
-    //                 x,
-    //                 y,
-    //                 z
-    //             );
-    //         }
-    //     }
-    // }
-}
 
-void DrawXLines()
-{
-    for(int y = 0; y <= g_VoxelCount[1]; y++)
+    for(int x = 0; x < 16; x++)
     {
-        for(int z = 0; z <= g_VoxelCount[2]; z++)
+        for(int y = 0; y < 16; y++)
         {
-            DrawLine(
-                g_CurrentVolumeOrigin[0],
-                g_CurrentVolumeOrigin[1] + y * g_VoxelSize,
-                g_CurrentVolumeOrigin[2] + z * g_VoxelSize,
-
-                g_CurrentVolumeOrigin[0] + g_BoxSize[0],
-                g_CurrentVolumeOrigin[1] + y * g_VoxelSize,
-                g_CurrentVolumeOrigin[2] + z * g_VoxelSize
-            );
+            for(int z = 0; z < 8; z++)
+            {
+                DrawVoxelCube(
+                    x,
+                    y,
+                    z
+                );
+            }
         }
     }
 }
 
-void DrawYLines()
-{
-    for(int x = 0; x <= g_VoxelCount[0]; x++)
-    {
-        for(int z = 0; z <= g_VoxelCount[2]; z++)
-        {
-            DrawLine(
-                g_CurrentVolumeOrigin[0] + x * g_VoxelSize,
-                g_CurrentVolumeOrigin[1],
-                g_CurrentVolumeOrigin[2] + z * g_VoxelSize,
-
-                g_CurrentVolumeOrigin[0] + x * g_VoxelSize,
-                g_CurrentVolumeOrigin[1] + g_BoxSize[1],
-                g_CurrentVolumeOrigin[2] + z * g_VoxelSize
-            );
-        }
-    }
-}
-
-void DrawZLines()
-{
-    for(int x = 0; x <= g_VoxelCount[0]; x++)
-    {
-        for(int y = 0; y <= g_VoxelCount[1]; y++)
-        {
-            DrawLine(
-                g_CurrentVolumeOrigin[0] + x * g_VoxelSize,
-                g_CurrentVolumeOrigin[1] + y * g_VoxelSize,
-                g_CurrentVolumeOrigin[2],
-
-                g_CurrentVolumeOrigin[0] + x * g_VoxelSize,
-                g_CurrentVolumeOrigin[1] + y * g_VoxelSize,
-                g_CurrentVolumeOrigin[2] + g_BoxSize[2]
-            );
-        }
-    }
-}
 
 void DrawVoxelCube(
     int x,

@@ -4,6 +4,7 @@
 
 #include "VoxelVisualizer/core"
 #include "VoxelVisualizer/drawing"
+#include "VoxelVisualizer/voxel_overlay"
 
 public Plugin myinfo =
 {
@@ -193,6 +194,22 @@ public Action Command_Voxel(
         );
     }
 
+    else if (StrEqual(command, "test"))
+    {
+        float pos[3];
+
+        GetClientAbsOrigin(client, pos);
+
+        Voxel_DrawTestBox(
+            pos[0],
+            pos[1],
+            pos[2]
+        );
+        PrintToChat(client, "[Voxel] Test box drawn");
+    }
+
+
+
     return Plugin_Handled;
 }
 
@@ -205,7 +222,7 @@ public void OnGameFrame()
 
     g_DrawTick++;
 
-    if(g_DrawTick < 3)
+    if(g_DrawTick < 30)
         return;
 
     g_DrawTick = 0;
