@@ -1,8 +1,15 @@
 #if defined _checkpoint_files_included
     #endinput
 #endif
-
 #define _checkpoint_files_included
+
+
+#define MAP_CONFIG_PATH "C:/MATAS/RocketJumpAI/MapConfigs"
+
+
+// ============================================================
+// Get course name from checkpoint name
+// ============================================================
 
 void GetCheckpointCourseName(
     const char[] checkpointName,
@@ -118,6 +125,9 @@ void GetCheckpointCourseName(
 }
 
 
+// ============================================================
+// Check whether string contains only numbers
+// ============================================================
 
 bool IsNumericString(const char[] value)
 {
@@ -140,7 +150,18 @@ bool IsNumericString(const char[] value)
 }
 
 
-#define MAP_CONFIG_PATH "C:/MATAS/RocketJumpAI/MapConfigs"
+// ============================================================
+// Save checkpoints
+//
+// save:
+//     Normal flat checkpoint list.
+//     Final trigger_capture_area is appended.
+//
+// save courses:
+//     Normal checkpoints grouped by course.
+//     Capture areas are saved separately to:
+//     <map>_captures.cfg
+// ============================================================
 
 void SaveCheckpoints(bool courses = false)
 {
@@ -165,7 +186,7 @@ void SaveCheckpoints(bool courses = false)
     );
 
     // --------------------------------------------------------
-    // Build absolute config path.
+    // Build checkpoint config path.
     // --------------------------------------------------------
 
     char path[PLATFORM_MAX_PATH];
@@ -191,15 +212,29 @@ void SaveCheckpoints(bool courses = false)
 
     if (!courses)
     {
+        // ----------------------------------------------------
+        // Normal flat checkpoint list.
+        // ----------------------------------------------------
+
         SaveCheckpointsFlat(kv);
+
+        // ----------------------------------------------------
+        // Append capture area as final checkpoint.
+        // ----------------------------------------------------
+
+        SaveFinalCaptureCheckpoint(kv);
     }
     else
     {
+        // ----------------------------------------------------
+        // Normal course-grouped checkpoint list.
+        // ----------------------------------------------------
+
         SaveCheckpointsByCourse(kv);
     }
 
     // --------------------------------------------------------
-    // Write file.
+    // Write checkpoint file.
     // --------------------------------------------------------
 
     if (!kv.ExportToFile(path))
@@ -233,8 +268,23 @@ void SaveCheckpoints(bool courses = false)
             "[Checkpoint] Checkpoints were grouped by course."
         );
     }
+    else
+    {
+        PrintToServer(
+            "[Checkpoint] Final capture area was appended."
+        );
+    }
 
     delete kv;
+
+    // --------------------------------------------------------
+    // Course mode gets a separate capture file.
+    // --------------------------------------------------------
+
+    if (courses)
+    {
+        SaveCaptureAreas(mapName);
+    }
 }
 
 
@@ -277,35 +327,323 @@ void SaveCheckpointsFlat(KeyValues kv)
 
 
 // ============================================================
+// Append the first trigger_capture_area as the final checkpoint
+// ============================================================
+
+void SaveFinalCaptureCheckpoint(KeyValues kv)
+{
+    int ent = FindEntityByClassname(
+        -1,
+        "trigger_capture_area"
+    );
+
+    if (ent == -1)
+    {
+        PrintToServer(
+            "[Checkpoint] WARNING: No trigger_capture_area found."
+        );
+
+        return;
+    }
+
+    char name[128];
+
+    GetEntPropString(
+        ent,
+        Prop_Data,
+        "m_iszCapPointName",
+        name,
+        sizeof(name)
+    );
+
+    float origin[3];
+
+    GetEntPropVector(
+        ent,
+        Prop_Data,
+        "m_vecOrigin",
+        origin
+    );
+
+    // --------------------------------------------------------
+    // Capture becomes the next index after normal checkpoints.
+    // --------------------------------------------------------
+
+    int index = g_Checkpoints.Length;
+
+    char indexString[16];
+
+    IntToString(
+        index,
+        indexString,
+        sizeof(indexString)
+    );
+
+    kv.JumpToKey(
+        indexString,
+        true
+    );
+
+    SaveCaptureData(
+        kv,
+        name,
+        origin
+    );
+
+    kv.GoBack();
+
+    PrintToServer(
+        "[Checkpoint] Final capture | Entity: %d | Name: \"%s\" | Pos: %.1f %.1f %.1f | Index: %d",
+        ent,
+        name,
+        origin[0],
+        origin[1],
+        origin[2],
+        index
+    );
+}
+
+
+// ============================================================
+// Save all trigger_capture_area entities.
+//
+// Output:
+//
+// <map>_captures.cfg
+//
+// "0"
+// {
+//     "name"       "..."
+//     "x"          "..."
+//     "y"          "..."
+//     "z"          "..."
+//     "yaw"        "0.000000"
+//     ...
+// }
+// ============================================================
+
+void SaveCaptureAreas(const char[] mapName)
+{
+    char path[PLATFORM_MAX_PATH];
+
+    Format(
+        path,
+        sizeof(path),
+        "%s/%s_captures.cfg",
+        MAP_CONFIG_PATH,
+        mapName
+    );
+
+    PrintToServer(
+        "[Checkpoint] Saving capture areas to: %s",
+        path
+    );
+
+    KeyValues kv = new KeyValues("Checkpoints");
+
+    int ent = -1;
+    int count = 0;
+
+    while ((ent = FindEntityByClassname(
+        ent,
+        "trigger_capture_area"
+    )) != -1)
+    {
+        char name[128];
+
+        GetEntPropString(
+            ent,
+            Prop_Data,
+            "m_iszCapPointName",
+            name,
+            sizeof(name)
+        );
+
+
+        float origin[3];
+
+        GetEntPropVector(
+            ent,
+            Prop_Data,
+            "m_vecOrigin",
+            origin
+        );
+
+        // ----------------------------------------------------
+        // Create flat index.
+        // ----------------------------------------------------
+
+        char index[16];
+
+        IntToString(
+            count,
+            index,
+            sizeof(index)
+        );
+
+        kv.JumpToKey(
+            index,
+            true
+        );
+
+        SaveCaptureData(
+            kv,
+            name,
+            origin
+        );
+
+        kv.GoBack();
+
+        PrintToServer(
+            "[Capture %d] Entity: %d | Name: \"%s\" | Pos: %.1f %.1f %.1f",
+            count,
+            ent,
+            name,
+            origin[0],
+            origin[1],
+            origin[2]
+        );
+
+        count++;
+    }
+
+    // --------------------------------------------------------
+    // Write capture file.
+    // --------------------------------------------------------
+
+    if (!kv.ExportToFile(path))
+    {
+        PrintToServer(
+            "[Checkpoint] ERROR: Failed to save capture areas to:"
+        );
+
+        PrintToServer(
+            "%s",
+            path
+        );
+
+        delete kv;
+        return;
+    }
+
+    PrintToServer(
+        "[Checkpoint] Saved %d capture areas.",
+        count
+    );
+
+    PrintToServer(
+        "[Checkpoint] Capture file: %s",
+        path
+    );
+
+    delete kv;
+}
+
+
+// ============================================================
+// Save one capture area.
+//
+// Capture areas intentionally have the same structure as a
+// CheckpointData entry, but only name + position are meaningful.
+//
+// Everything else is zero.
+// ============================================================
+
+void SaveCaptureData(
+    KeyValues kv,
+    const char[] name,
+    const float origin[3]
+)
+{
+    kv.SetString(
+        "name",
+        name
+    );
+
+    kv.SetFloat(
+        "x",
+        origin[0]
+    );
+
+    kv.SetFloat(
+        "y",
+        origin[1]
+    );
+
+    kv.SetFloat(
+        "z",
+        origin[2]
+    );
+
+    // --------------------------------------------------------
+    // Unused checkpoint fields.
+    // --------------------------------------------------------
+
+    kv.SetFloat(
+        "yaw",
+        0.0
+    );
+
+    kv.SetFloat(
+        "plane_x",
+        0.0
+    );
+
+    kv.SetFloat(
+        "plane_y",
+        0.0
+    );
+
+    kv.SetFloat(
+        "plane_z",
+        0.0
+    );
+
+    kv.SetFloat(
+        "forward_x",
+        0.0
+    );
+
+    kv.SetFloat(
+        "forward_y",
+        0.0
+    );
+
+    kv.SetFloat(
+        "forward_z",
+        0.0
+    );
+
+    kv.SetFloat(
+        "side_x",
+        0.0
+    );
+
+    kv.SetFloat(
+        "side_y",
+        0.0
+    );
+
+    kv.SetFloat(
+        "side_z",
+        0.0
+    );
+}
+
+
+// ============================================================
 // Save checkpoints grouped by course
 // ============================================================
 
 void SaveCheckpointsByCourse(KeyValues kv)
 {
-    // --------------------------------------------------------
-    // Root:
-    //
-    // "courses"
-    // {
-    //     ...
-    // }
-    // --------------------------------------------------------
-
     kv.JumpToKey(
         "courses",
         true
     );
 
-    // --------------------------------------------------------
-    // We don't know the course names beforehand.
-    //
-    // Therefore process each checkpoint and create its course
-    // section when needed.
-    // --------------------------------------------------------
-
     int courseCounts = 0;
 
-    // Keep track of course names we've already created.
     ArrayList courseNames = new ArrayList(
         64
     );
@@ -380,8 +718,6 @@ void SaveCheckpointsByCourse(KeyValues kv)
 
         // ----------------------------------------------------
         // Determine index inside the course.
-        //
-        // This preserves the current order of g_Checkpoints.
         // ----------------------------------------------------
 
         int checkpointIndex = 0;
@@ -442,7 +778,7 @@ void SaveCheckpointsByCourse(KeyValues kv)
 
 
 // ============================================================
-// Write one checkpoint's data into the current KeyValues node
+// Write one checkpoint's data
 // ============================================================
 
 void SaveCheckpointData(
