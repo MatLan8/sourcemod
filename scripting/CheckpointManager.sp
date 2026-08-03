@@ -2,6 +2,7 @@
 #include <sdktools>
 #include "Checkpoint/globals.inc"
 #include "Checkpoint/manage.inc"
+#include "Checkpoint/files.inc"
 
 
 // ============================================================
@@ -102,9 +103,21 @@ public Action Command_Checkpoint(
     {
         PrintCheckpoints(client);
     }
-    else if (StrEqual(command, "save"))
+    else if (StrEqual(command, "save", false))
     {
-        SaveCheckpoints(client);
+        bool courses = false;
+        if (args >= 2) {
+            char option[32];
+            
+            GetCmdArg( 2,
+                option,
+                sizeof(option)
+            );
+            if (StrEqual(option, "courses", false)) {
+                courses = true;
+            }
+        }
+        SaveCheckpoints(courses);
     }
     else if (StrEqual(command, "order"))
     {

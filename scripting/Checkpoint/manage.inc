@@ -165,186 +165,182 @@ void PrintCheckpoints(int client)
 // Save checkpoints
 // ============================================================
 
-void SaveCheckpoints(int client)
-{
-    if (g_Checkpoints == null || g_Checkpoints.Length == 0)
-    {
-        ReplyToCommand(
-            client,
-            "[Checkpoint] No checkpoints to save."
-        );
+// void SaveCheckpoints(int client)
+// {
+//     if (g_Checkpoints == null || g_Checkpoints.Length == 0)
+//     {
+//         ReplyToCommand(
+//             client,
+//             "[Checkpoint] No checkpoints to save."
+//         );
 
-        return;
-    }
+//         return;
+//     }
 
-    char mapName[128];
+//     char mapName[128];
 
-    GetCurrentMap(
-        mapName,
-        sizeof(mapName)
-    );
+//     GetCurrentMap(
+//         mapName,
+//         sizeof(mapName)
+//     );
 
-    char path[PLATFORM_MAX_PATH];
+//     char path[PLATFORM_MAX_PATH];
 
-    BuildPath(
-        Path_SM,
-        path,
-        sizeof(path),
-        "configs/RocketJumpAI/%s.cfg",
-        mapName
-    );
+//     BuildPath(
+//         Path_SM,
+//         path,
+//         sizeof(path),
+//         "configs/RocketJumpAI/%s.cfg",
+//         mapName
+//     );
 
-    KeyValues kv = new KeyValues("checkpoints");
+//     KeyValues kv = new KeyValues("checkpoints");
 
-    kv.SetString(
-        "map",
-        mapName
-    );
 
-    for (int i = 0; i < g_Checkpoints.Length; i++)
-    {
-        CheckpointData checkpoint;
+//     for (int i = 0; i < g_Checkpoints.Length; i++)
+//     {
+//         CheckpointData checkpoint;
 
-        g_Checkpoints.GetArray(
-            i,
-            checkpoint
-        );
+//         g_Checkpoints.GetArray(
+//             i,
+//             checkpoint
+//         );
 
-        char index[16];
+//         char index[16];
 
-        IntToString(
-            i,
-            index,
-            sizeof(index)
-        );
+//         IntToString(
+//             i,
+//             index,
+//             sizeof(index)
+//         );
 
-        kv.JumpToKey(
-            index,
-            true
-        );
+//         kv.JumpToKey(
+//             index,
+//             true
+//         );
 
-        kv.SetString(
-            "name",
-            checkpoint.name
-        );
+//         kv.SetString(
+//             "name",
+//             checkpoint.name
+//         );
 
-        kv.SetFloat(
-            "x",
-            checkpoint.waypoint[0]
-        );
+//         kv.SetFloat(
+//             "x",
+//             checkpoint.waypoint[0]
+//         );
 
-        kv.SetFloat(
-            "y",
-            checkpoint.waypoint[1]
-        );
+//         kv.SetFloat(
+//             "y",
+//             checkpoint.waypoint[1]
+//         );
 
-        kv.SetFloat(
-            "z",
-            checkpoint.waypoint[2]
-        );
+//         kv.SetFloat(
+//             "z",
+//             checkpoint.waypoint[2]
+//         );
 
-        kv.SetFloat(
-            "yaw",
-            checkpoint.angles[1]
-        );
+//         kv.SetFloat(
+//             "yaw",
+//             checkpoint.angles[1]
+//         );
 
-        kv.SetFloat(
-            "plane_x",
-            checkpoint.planeCenter[0]
-        );
+//         kv.SetFloat(
+//             "plane_x",
+//             checkpoint.planeCenter[0]
+//         );
 
-        kv.SetFloat(
-            "plane_y",
-            checkpoint.planeCenter[1]
-        );
+//         kv.SetFloat(
+//             "plane_y",
+//             checkpoint.planeCenter[1]
+//         );
 
-        kv.SetFloat(
-            "plane_z",
-            checkpoint.planeCenter[2]
-        );
+//         kv.SetFloat(
+//             "plane_z",
+//             checkpoint.planeCenter[2]
+//         );
 
-        kv.SetFloat(
-            "forward_x",
-            checkpoint.forwardVec[0]
-        );
+//         kv.SetFloat(
+//             "forward_x",
+//             checkpoint.forwardVec[0]
+//         );
 
-        kv.SetFloat(
-            "forward_y",
-            checkpoint.forwardVec[1]
-        );
+//         kv.SetFloat(
+//             "forward_y",
+//             checkpoint.forwardVec[1]
+//         );
 
-        kv.SetFloat(
-            "forward_z",
-            checkpoint.forwardVec[2]
-        );
+//         kv.SetFloat(
+//             "forward_z",
+//             checkpoint.forwardVec[2]
+//         );
 
-        kv.SetFloat(
-            "side_x",
-            checkpoint.side[0]
-        );
+//         kv.SetFloat(
+//             "side_x",
+//             checkpoint.side[0]
+//         );
 
-        kv.SetFloat(
-            "side_y",
-            checkpoint.side[1]
-        );
+//         kv.SetFloat(
+//             "side_y",
+//             checkpoint.side[1]
+//         );
 
-        kv.SetFloat(
-            "side_z",
-            checkpoint.side[2]
-        );
+//         kv.SetFloat(
+//             "side_z",
+//             checkpoint.side[2]
+//         );
 
-        kv.GoBack();
-    }
+//         kv.GoBack();
+//     }
 
-    // Make sure the directory exists.
-    char directory[PLATFORM_MAX_PATH];
+//     // Make sure the directory exists.
+//     char directory[PLATFORM_MAX_PATH];
 
-    BuildPath(
-        Path_SM,
-        directory,
-        sizeof(directory),
-        "configs/RocketJumpAI"
-    );
+//     BuildPath(
+//         Path_SM,
+//         directory,
+//         sizeof(directory),
+//         "configs/RocketJumpAI"
+//     );
 
-    if (!DirExists(directory))
-    {
-        CreateDirectory(
-            directory,
-            0
-        );
-    }
+//     if (!DirExists(directory))
+//     {
+//         CreateDirectory(
+//             directory,
+//             0
+//         );
+//     }
 
-    if (!KeyValuesToFile(kv, path))
-    {
-        PrintToServer(
-            "[Checkpoint] Failed to save: %s",
-            path
-        );
+//     if (!KeyValuesToFile(kv, path))
+//     {
+//         PrintToServer(
+//             "[Checkpoint] Failed to save: %s",
+//             path
+//         );
 
-        ReplyToCommand(
-            client,
-            "[Checkpoint] Failed to save checkpoint data."
-        );
+//         ReplyToCommand(
+//             client,
+//             "[Checkpoint] Failed to save checkpoint data."
+//         );
 
-        delete kv;
+//         delete kv;
 
-        return;
-    }
+//         return;
+//     }
 
-    delete kv;
+//     delete kv;
 
-    PrintToServer(
-        "[Checkpoint] Saved %d checkpoints to %s",
-        g_Checkpoints.Length,
-        path
-    );
+//     PrintToServer(
+//         "[Checkpoint] Saved %d checkpoints to %s",
+//         g_Checkpoints.Length,
+//         path
+//     );
 
-    ReplyToCommand(
-        client,
-        "[Checkpoint] Saved %d checkpoints.",
-        g_Checkpoints.Length
-    );
-}
+//     ReplyToCommand(
+//         client,
+//         "[Checkpoint] Saved %d checkpoints.",
+//         g_Checkpoints.Length
+//     );
+// }
 
 
 // ============================================================
