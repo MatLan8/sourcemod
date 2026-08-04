@@ -4,7 +4,7 @@
 #define _checkpoint_files_included
 
 
-#define MAP_CONFIG_PATH "C:/MATAS/RocketJumpAI/MapConfigs"
+#define MAP_CONFIG_PATH "data/MapConfigs"
 
 void SaveCheckpoints(bool flat = false)
 {
@@ -17,10 +17,6 @@ void SaveCheckpoints(bool flat = false)
         return;
     }
 
-    // --------------------------------------------------------
-    // Get current map name.
-    // --------------------------------------------------------
-
     char mapName[128];
 
     GetCurrentMap(
@@ -28,21 +24,12 @@ void SaveCheckpoints(bool flat = false)
         sizeof(mapName)
     );
 
-    // --------------------------------------------------------
-    // Build output filename.
-    //
-    // Normal:
-    //     mapname.cfg
-    //
-    // Flat:
-    //     mapname_flat.cfg
-    // --------------------------------------------------------
-
     char path[PLATFORM_MAX_PATH];
 
     if (flat)
     {
-        Format(
+        BuildPath(
+            Path_SM,
             path,
             sizeof(path),
             "%s/%s_flat.cfg",
@@ -52,7 +39,8 @@ void SaveCheckpoints(bool flat = false)
     }
     else
     {
-        Format(
+        BuildPath(
+            Path_SM,
             path,
             sizeof(path),
             "%s/%s.cfg",
@@ -68,6 +56,28 @@ void SaveCheckpoints(bool flat = false)
     );
 
     // --------------------------------------------------------
+    // Create directory if necessary.
+    // --------------------------------------------------------
+
+    char directory[PLATFORM_MAX_PATH];
+
+    BuildPath(
+        Path_SM,
+        directory,
+        sizeof(directory),
+        "%s",
+        MAP_CONFIG_PATH
+    );
+
+    if (!DirExists(directory))
+    {
+        CreateDirectory(
+            directory,
+            511
+        );
+    }
+
+    // --------------------------------------------------------
     // Create KeyValues root.
     // --------------------------------------------------------
 
@@ -79,9 +89,6 @@ void SaveCheckpoints(bool flat = false)
     // This includes:
     //   - normal checkpoints
     //   - capture areas appended by GenerateCaptures()
-    //
-    // Capture areas already have their unused values set to 0,
-    // so we don't need any special handling here.
     // --------------------------------------------------------
 
     for (int i = 0; i < g_Checkpoints.Length; i++)
@@ -116,6 +123,8 @@ void SaveCheckpoints(bool flat = false)
 
     // --------------------------------------------------------
     // Export.
+    //
+    // ExportToFile overwrites the existing file.
     // --------------------------------------------------------
 
     if (!kv.ExportToFile(path))
@@ -146,36 +155,32 @@ void SaveCheckpoints(bool flat = false)
     delete kv;
 }
 
+
 // ============================================================
 // Save a manually selected course
 //
 // Usage:
-//     savecourse <course_name> <checkpoint_index> <index> ...
+//     sm_checkpoint savecourse <course> <index> <index> ...
 //
 // Example:
-//     savecourse Basic 0 55 146 21 12 69
+//     sm_checkpoint savecourse Basic 0 55 146 21 12 69
 //
 // The indexes refer directly to g_Checkpoints.
-// Their order determines the order inside the course.
-//
-// If the course already exists, it is completely replaced.
-// Other courses remain untouched.
+// If the course already exists, only that course is replaced.
+// All other courses remain untouched.
 // ============================================================
 
 void SaveCourse(int client, int args)
 {
-    // Need:
-    // sm_checkpoint savecourse <course> <index> <index> ...
-    //
-    // arg 1 = savecourse
-    // arg 2 = course name
-    // arg 3+ = checkpoint indexes
+    // --------------------------------------------------------
+    // Validate arguments.
+    // --------------------------------------------------------
 
     if (args < 3)
     {
         ReplyToCommand(
             client,
-            "[Checkpoint] Usage: sm_checkpoint savecourse <course> <index> <index> ..."
+            "[Checkpoint] Usage: savecourse <course> <index> <index> ..."
         );
 
         return;
@@ -191,6 +196,11 @@ void SaveCourse(int client, int args)
         return;
     }
 
+    // --------------------------------------------------------
+    // Argument 1 = course name.
+    // Arguments 2+ = checkpoint indexes.
+    // --------------------------------------------------------
+
     char courseName[128];
 
     GetCmdArg(
@@ -199,9 +209,18 @@ void SaveCourse(int client, int args)
         sizeof(courseName)
     );
 
+    if (strlen(courseName) == 0)
+    {
+        ReplyToCommand(
+            client,
+            "[Checkpoint] Invalid course name."
+        );
+
+        return;
+    }
 
     // --------------------------------------------------------
-    // Validate checkpoint indexes
+    // Read checkpoint indexes.
     // --------------------------------------------------------
 
     int requested[2048];
@@ -234,10 +253,6 @@ void SaveCourse(int client, int args)
         requestedCount++;
     }
 
-    // --------------------------------------------------------
-    // Get map path
-    // --------------------------------------------------------
-
     char mapName[128];
 
     GetCurrentMap(
@@ -247,7 +262,8 @@ void SaveCourse(int client, int args)
 
     char path[PLATFORM_MAX_PATH];
 
-    Format(
+    BuildPath(
+        Path_SM,
         path,
         sizeof(path),
         "%s/%s.cfg",
@@ -255,9 +271,24 @@ void SaveCourse(int client, int args)
         mapName
     );
 
-    // --------------------------------------------------------
-    // Load existing file
-    // --------------------------------------------------------
+    char directory[PLATFORM_MAX_PATH];
+
+    BuildPath(
+        Path_SM,
+        directory,
+        sizeof(directory),
+        "%s",
+        MAP_CONFIG_PATH
+    );
+
+    if (!DirExists(directory))
+    {
+        CreateDirectory(
+            directory,
+            511
+        );
+    }
+
 
     KeyValues kv = new KeyValues("Checkpoints");
 
@@ -267,7 +298,7 @@ void SaveCourse(int client, int args)
         {
             ReplyToCommand(
                 client,
-                "[Checkpoint] ERROR: Could not read %s",
+                "[Checkpoint] ERROR: Failed to read existing file: %s",
                 path
             );
 
@@ -276,40 +307,21 @@ void SaveCourse(int client, int args)
         }
     }
 
-    // --------------------------------------------------------
-    // Go to "courses"
-    // --------------------------------------------------------
+    kv.Rewind();
 
     kv.JumpToKey(
-        "courses",
+        "Courses",
         true
     );
 
-    // --------------------------------------------------------
-    // Remove ONLY this course.
-    //
-    // Existing courses remain untouched.
-    // --------------------------------------------------------
-
-    if (kv.JumpToKey(courseName))
-    {
-        kv.DeleteThis();
-    }
-
-
-    // --------------------------------------------------------
-    // Create the new course
-    // --------------------------------------------------------
+    kv.DeleteKey(
+        courseName
+    );
 
     kv.JumpToKey(
         courseName,
         true
     );
-
-
-    // --------------------------------------------------------
-    // Write checkpoints in requested order
-    // --------------------------------------------------------
 
     for (int i = 0; i < requestedCount; i++)
     {
@@ -343,17 +355,7 @@ void SaveCourse(int client, int args)
         kv.GoBack();
     }
 
-    // --------------------------------------------------------
-    // Return to root
-    //
-    // course -> courses -> Checkpoints
-    // --------------------------------------------------------
-
     kv.Rewind();
-
-    // --------------------------------------------------------
-    // Save entire file
-    // --------------------------------------------------------
 
     if (!kv.ExportToFile(path))
     {
@@ -367,22 +369,11 @@ void SaveCourse(int client, int args)
         return;
     }
 
-    PrintToServer(
-        "[Checkpoint] Saved course \"%s\" with %d checkpoints.",
-        courseName,
-        requestedCount
-    );
-
     ReplyToCommand(
         client,
         "[Checkpoint] Saved course \"%s\" with %d checkpoints.",
         courseName,
         requestedCount
-    );
-
-    PrintToServer(
-        "[Checkpoint] File: %s",
-        path
     );
 
     delete kv;
