@@ -3,6 +3,7 @@
 #include "Checkpoint/globals.inc"
 #include "Checkpoint/manage.inc"
 #include "Checkpoint/files.inc"
+#include "Checkpoint/debug.inc"
 
 
 // ============================================================
@@ -71,6 +72,11 @@ public Action Command_Checkpoint(
         ReplyToCommand(
             client,
             "  sm_checkpoint save"
+        );
+
+        ReplyToCommand(
+            client,
+            "  sm_checkpoint savecourse <course_name> <checkpoint_index> ..."
         );
 
         ReplyToCommand(
