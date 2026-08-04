@@ -121,7 +121,6 @@ public Action Command_Checkpoint(
                 flat = true;
             }
         }
-
         SaveCheckpoints(flat);
     }
     else if (StrEqual(command, "savecourse"))

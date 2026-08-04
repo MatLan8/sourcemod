@@ -164,11 +164,18 @@ void SaveCheckpoints(bool flat = false)
 
 void SaveCourse(int client, int args)
 {
-    if (args < 2)
+    // Need:
+    // sm_checkpoint savecourse <course> <index> <index> ...
+    //
+    // arg 1 = savecourse
+    // arg 2 = course name
+    // arg 3+ = checkpoint indexes
+
+    if (args < 3)
     {
         ReplyToCommand(
             client,
-            "[Checkpoint] Usage: savecourse <course> <index> <index> ..."
+            "[Checkpoint] Usage: sm_checkpoint savecourse <course> <index> <index> ..."
         );
 
         return;
@@ -178,42 +185,27 @@ void SaveCourse(int client, int args)
     {
         ReplyToCommand(
             client,
-            "[Checkpoint] No checkpoints available."
+            "[Checkpoint] No checkpoints generated."
         );
 
         return;
     }
-
-    // --------------------------------------------------------
-    // Get course name.
-    // --------------------------------------------------------
 
     char courseName[128];
 
     GetCmdArg(
-        1,
+        2,
         courseName,
         sizeof(courseName)
     );
 
-    if (strlen(courseName) == 0)
-    {
-        ReplyToCommand(
-            client,
-            "[Checkpoint] Invalid course name."
-        );
-
-        return;
-    }
 
     // --------------------------------------------------------
-    // Read and validate indexes.
-    //
-    // These indexes refer directly to g_Checkpoints.
+    // Validate checkpoint indexes
     // --------------------------------------------------------
 
-    int indexes[2048];
-    int indexCount = 0;
+    int requested[2048];
+    int requestedCount = 0;
 
     for (int arg = 2; arg <= args; arg++)
     {
@@ -238,12 +230,12 @@ void SaveCourse(int client, int args)
             return;
         }
 
-        indexes[indexCount] = index;
-        indexCount++;
+        requested[requestedCount] = index;
+        requestedCount++;
     }
 
     // --------------------------------------------------------
-    // Get map config path.
+    // Get map path
     // --------------------------------------------------------
 
     char mapName[128];
@@ -264,9 +256,7 @@ void SaveCourse(int client, int args)
     );
 
     // --------------------------------------------------------
-    // Load existing config.
-    //
-    // This preserves all other courses.
+    // Load existing file
     // --------------------------------------------------------
 
     KeyValues kv = new KeyValues("Checkpoints");
@@ -287,10 +277,7 @@ void SaveCourse(int client, int args)
     }
 
     // --------------------------------------------------------
-    // Navigate to:
-    //
-    // Checkpoints
-    //     courses
+    // Go to "courses"
     // --------------------------------------------------------
 
     kv.JumpToKey(
@@ -299,15 +286,15 @@ void SaveCourse(int client, int args)
     );
 
     // --------------------------------------------------------
-    // Remove the existing course.
+    // Remove ONLY this course.
+    //
+    // Existing courses remain untouched.
     // --------------------------------------------------------
 
-    kv.DeleteKey(
-        courseName
-    );
+    kv.DeleteKey(courseName);
 
     // --------------------------------------------------------
-    // Create the new course.
+    // Create the new course
     // --------------------------------------------------------
 
     kv.JumpToKey(
@@ -316,29 +303,30 @@ void SaveCourse(int client, int args)
     );
 
     // --------------------------------------------------------
-    // Write checkpoints using the supplied g_Checkpoints
-    // indexes, preserving the order from the command.
+    // Write checkpoints in requested order
     // --------------------------------------------------------
 
-    for (int i = 0; i < indexCount; i++)
+    for (int i = 0; i < requestedCount; i++)
     {
+        int checkpointIndex = requested[i];
+
         CheckpointData checkpoint;
 
         g_Checkpoints.GetArray(
-            indexes[i],
+            checkpointIndex,
             checkpoint
         );
 
-        char outputIndex[16];
+        char indexString[16];
 
         IntToString(
             i,
-            outputIndex,
-            sizeof(outputIndex)
+            indexString,
+            sizeof(indexString)
         );
 
         kv.JumpToKey(
-            outputIndex,
+            indexString,
             true
         );
 
@@ -351,7 +339,7 @@ void SaveCourse(int client, int args)
     }
 
     // --------------------------------------------------------
-    // Return to root:
+    // Return to root
     //
     // course -> courses -> Checkpoints
     // --------------------------------------------------------
@@ -360,7 +348,7 @@ void SaveCourse(int client, int args)
     kv.GoBack();
 
     // --------------------------------------------------------
-    // Export.
+    // Save entire file
     // --------------------------------------------------------
 
     if (!kv.ExportToFile(path))
@@ -378,19 +366,19 @@ void SaveCourse(int client, int args)
     PrintToServer(
         "[Checkpoint] Saved course \"%s\" with %d checkpoints.",
         courseName,
-        indexCount
-    );
-
-    PrintToServer(
-        "[Checkpoint] File: %s",
-        path
+        requestedCount
     );
 
     ReplyToCommand(
         client,
         "[Checkpoint] Saved course \"%s\" with %d checkpoints.",
         courseName,
-        indexCount
+        requestedCount
+    );
+
+    PrintToServer(
+        "[Checkpoint] File: %s",
+        path
     );
 
     delete kv;
