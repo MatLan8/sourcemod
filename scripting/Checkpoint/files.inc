@@ -207,7 +207,7 @@ void SaveCourse(int client, int args)
     int requested[2048];
     int requestedCount = 0;
 
-    for (int arg = 2; arg <= args; arg++)
+    for (int arg = 3; arg <= args; arg++)
     {
         char buffer[32];
 
@@ -291,7 +291,11 @@ void SaveCourse(int client, int args)
     // Existing courses remain untouched.
     // --------------------------------------------------------
 
-    kv.DeleteKey(courseName);
+    if (kv.JumpToKey(courseName))
+    {
+        kv.DeleteThis();
+    }
+
 
     // --------------------------------------------------------
     // Create the new course
@@ -301,6 +305,7 @@ void SaveCourse(int client, int args)
         courseName,
         true
     );
+
 
     // --------------------------------------------------------
     // Write checkpoints in requested order
@@ -344,8 +349,7 @@ void SaveCourse(int client, int args)
     // course -> courses -> Checkpoints
     // --------------------------------------------------------
 
-    kv.GoBack();
-    kv.GoBack();
+    kv.Rewind();
 
     // --------------------------------------------------------
     // Save entire file
