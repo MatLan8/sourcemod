@@ -42,7 +42,6 @@ public void OnMapStart()
         );
 }
 
-
 // ============================================================
 // Main checkpoint command
 // ============================================================
@@ -105,19 +104,32 @@ public Action Command_Checkpoint(
     }
     else if (StrEqual(command, "save", false))
     {
-        bool courses = false;
-        if (args >= 2) {
+        bool flat = false;
+
+        if (args >= 2)
+        {
             char option[32];
-            
-            GetCmdArg( 2,
+
+            GetCmdArg(
+                2,
                 option,
                 sizeof(option)
             );
-            if (StrEqual(option, "courses", false)) {
-                courses = true;
+
+            if (StrEqual(option, "flat", false))
+            {
+                flat = true;
             }
         }
-        SaveCheckpoints(courses);
+
+        SaveCheckpoints(flat);
+    }
+    else if (StrEqual(command, "savecourse"))
+    {
+        SaveCourse(
+            client,
+            args
+        );
     }
     else if (StrEqual(command, "order"))
     {

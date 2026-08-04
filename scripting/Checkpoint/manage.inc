@@ -99,8 +99,87 @@ void GenerateCheckpoints(int client)
             count
         );
     }
+    GenerateCaptures(client);
 }
 
+void GenerateCaptures(int client)
+{
+    int ent = -1;
+    int count = 0;
+
+    while ((ent = FindEntityByClassname(ent, "trigger_capture_area")) != -1)
+    {
+        CheckpointData checkpoint;
+
+        // Clear the entire structure first.
+        checkpoint.entity = ent;
+        checkpoint.name[0] = '\0';
+
+        for (int i = 0; i < 3; i++)
+        {
+            checkpoint.waypoint[i] = 0.0;
+            checkpoint.angles[i] = 0.0;
+            checkpoint.forwardVec[i] = 0.0;
+            checkpoint.side[i] = 0.0;
+            checkpoint.planeCenter[i] = 0.0;
+        }
+
+        // ----------------------------------------------------
+        // Get control point name.
+        // ----------------------------------------------------
+
+        GetEntPropString(
+            ent,
+            Prop_Data,
+            "m_iszCapPointName",
+            checkpoint.name,
+            sizeof(checkpoint.name)
+        );
+
+        // ----------------------------------------------------
+        // Capture area origin.
+        // ----------------------------------------------------
+
+        GetEntPropVector(
+            ent,
+            Prop_Data,
+            "m_vecOrigin",
+            checkpoint.waypoint
+        );
+
+        // ----------------------------------------------------
+        // Add to the end of the checkpoint array.
+        // ----------------------------------------------------
+
+        g_Checkpoints.PushArray(checkpoint);
+
+        count++;
+
+        PrintToServer(
+            "[Capture %d] Entity %d | Name: \"%s\" | Pos: %.1f %.1f %.1f",
+            count,
+            ent,
+            checkpoint.name,
+            checkpoint.waypoint[0],
+            checkpoint.waypoint[1],
+            checkpoint.waypoint[2]
+        );
+    }
+
+    PrintToServer(
+        "[Checkpoint] Added %d capture areas.",
+        count
+    );
+
+    if (client > 0 && IsClientInGame(client))
+    {
+        PrintToChat(
+            client,
+            "\x04[Checkpoint]\x01 Added %d capture areas.",
+            count
+        );
+    }
+}
 
 // ============================================================
 // Print checkpoints
