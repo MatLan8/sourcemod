@@ -2,24 +2,50 @@
 #include <sdktools>
 #include <sdkhooks>
 
+// ============================================================
+// Runtime Trigger Builder
+//
+// Workflow:
+//
+//     sm_trigger point
+//
+//     Fly to first corner.
+//     sm_trigger point
+//
+//     Fly to opposite corner.
+//     sm_trigger point
+//
+//     sm_trigger create <name>
+//
+// The two points represent opposite corners of the trigger.
+//
+// The trigger is created at the center of the two points and
+// its local mins/maxs are calculated from those world points.
+//
+// ============================================================
+
+
+// ============================================================
+// Globals
+// ============================================================
+
+float g_TriggerPoints[2][3];
+int g_TriggerPointCount = 0;
+
+#define TRIGGER_MODEL "models/error.mdl"
+
+
+// ============================================================
+// Plugin info
+// ============================================================
+
 public Plugin myinfo =
 {
-    name = "Trigger Creator Test",
+    name = "Runtime Trigger Builder",
     author = "MatLan8",
-    description = "Creates runtime trigger_multiple volumes from two points",
+    description = "Creates runtime trigger_multiple entities from two world-space corners.",
     version = "1.0"
 };
-
-
-// ============================================================
-// Stored trigger corners
-// ============================================================
-
-float g_Corner1[3];
-float g_Corner2[3];
-
-bool g_HasCorner1 = false;
-bool g_HasCorner2 = false;
 
 
 // ============================================================
@@ -34,15 +60,33 @@ public void OnPluginStart()
     );
 
     PrintToServer(
-        "[Trigger] Plugin loaded."
+        "[Trigger] Runtime trigger builder loaded."
+    );
+}
+
+
+// ============================================================
+// Map start
+// ============================================================
+
+public void OnMapStart()
+{
+    PrecacheModel(
+        TRIGGER_MODEL,
+        true
+    );
+
+    g_TriggerPointCount = 0;
+
+    PrintToServer(
+        "[Trigger] Precached %s",
+        TRIGGER_MODEL
     );
 }
 
 
 // ============================================================
 // Main command
-//
-// Usage:
 //
 // sm_trigger point
 // sm_trigger create <name>
@@ -54,33 +98,14 @@ public Action Command_Trigger(
     int args
 )
 {
-    if (client <= 0)
+    if (client <= 0 || !IsClientInGame(client))
     {
         return Plugin_Handled;
     }
 
     if (args < 1)
     {
-        ReplyToCommand(
-            client,
-            "[Trigger] Usage:"
-        );
-
-        ReplyToCommand(
-            client,
-            "  sm_trigger point"
-        );
-
-        ReplyToCommand(
-            client,
-            "  sm_trigger create <name>"
-        );
-
-        ReplyToCommand(
-            client,
-            "  sm_trigger reset"
-        );
-
+        PrintTriggerUsage(client);
         return Plugin_Handled;
     }
 
@@ -92,112 +117,76 @@ public Action Command_Trigger(
         sizeof(command)
     );
 
-    // ========================================================
+    // --------------------------------------------------------
     // Save point
-    // ========================================================
+    // --------------------------------------------------------
 
     if (StrEqual(command, "point", false))
     {
-        float position[3];
+        if (g_TriggerPointCount >= 2)
+        {
+            ReplyToCommand(
+                client,
+                "[Trigger] Already have two points."
+            );
+
+            ReplyToCommand(
+                client,
+                "[Trigger] Use sm_trigger reset first."
+            );
+
+            return Plugin_Handled;
+        }
+
+        float origin[3];
 
         GetClientAbsOrigin(
             client,
-            position
+            origin
         );
 
-        // ----------------------------------------------------
-        // First point
-        // ----------------------------------------------------
+        g_TriggerPoints[g_TriggerPointCount][0] = origin[0];
+        g_TriggerPoints[g_TriggerPointCount][1] = origin[1];
+        g_TriggerPoints[g_TriggerPointCount][2] = origin[2];
 
-        if (!g_HasCorner1)
-        {
-            g_Corner1[0] = position[0];
-            g_Corner1[1] = position[1];
-            g_Corner1[2] = position[2];
-
-            g_HasCorner1 = true;
-
-            ReplyToCommand(
-                client,
-                "[Trigger] Corner 1 saved: %.3f %.3f %.3f",
-                position[0],
-                position[1],
-                position[2]
-            );
-
-            return Plugin_Handled;
-        }
-
-        // ----------------------------------------------------
-        // Second point
-        // ----------------------------------------------------
-
-        if (!g_HasCorner2)
-        {
-            g_Corner2[0] = position[0];
-            g_Corner2[1] = position[1];
-            g_Corner2[2] = position[2];
-
-            g_HasCorner2 = true;
-
-            ReplyToCommand(
-                client,
-                "[Trigger] Corner 2 saved: %.3f %.3f %.3f",
-                position[0],
-                position[1],
-                position[2]
-            );
-
-            ReplyToCommand(
-                client,
-                "[Trigger] Both corners saved."
-            );
-
-            ReplyToCommand(
-                client,
-                "[Trigger] Use: sm_trigger create <name>"
-            );
-
-            return Plugin_Handled;
-        }
-
-        // ----------------------------------------------------
-        // Already have both points
-        // ----------------------------------------------------
+        g_TriggerPointCount++;
 
         ReplyToCommand(
             client,
-            "[Trigger] Both corners are already set."
+            "[Trigger] Point %d saved:",
+            g_TriggerPointCount
         );
 
         ReplyToCommand(
             client,
-            "[Trigger] Use sm_trigger reset first."
+            "    %.3f %.3f %.3f",
+            origin[0],
+            origin[1],
+            origin[2]
         );
 
         return Plugin_Handled;
     }
 
-    // ========================================================
+    // --------------------------------------------------------
     // Reset
-    // ========================================================
+    // --------------------------------------------------------
 
     if (StrEqual(command, "reset", false))
     {
-        g_HasCorner1 = false;
-        g_HasCorner2 = false;
+        g_TriggerPointCount = 0;
 
         ReplyToCommand(
             client,
-            "[Trigger] Corner data reset."
+            "[Trigger] Points reset."
         );
 
         return Plugin_Handled;
     }
 
-    // ========================================================
-    // Create trigger
-    // ========================================================
+    // --------------------------------------------------------
+    // Create
+    // --------------------------------------------------------
 
     if (StrEqual(command, "create", false))
     {
@@ -211,40 +200,37 @@ public Action Command_Trigger(
             return Plugin_Handled;
         }
 
-        if (!g_HasCorner1 || !g_HasCorner2)
+        if (g_TriggerPointCount != 2)
         {
             ReplyToCommand(
                 client,
-                "[Trigger] You must save two corners first."
+                "[Trigger] You need exactly two points first."
             );
 
             return Plugin_Handled;
         }
 
-        char triggerName[128];
+        char name[128];
 
         GetCmdArg(
             2,
-            triggerName,
-            sizeof(triggerName)
+            name,
+            sizeof(name)
         );
 
-        CreateTrigger(
-            triggerName
+        CreateRuntimeTrigger(
+            client,
+            name
         );
 
         return Plugin_Handled;
     }
 
-    // ========================================================
+    // --------------------------------------------------------
     // Unknown command
-    // ========================================================
+    // --------------------------------------------------------
 
-    ReplyToCommand(
-        client,
-        "[Trigger] Unknown command: %s",
-        command
-    );
+    PrintTriggerUsage(client);
 
     return Plugin_Handled;
 }
@@ -254,69 +240,91 @@ public Action Command_Trigger(
 // Create runtime trigger
 // ============================================================
 
-void CreateTrigger(const char[] name)
+void CreateRuntimeTrigger(
+    int client,
+    const char[] name
+)
 {
-    // ========================================================
-    // Calculate world-space bounds
-    // ========================================================
-
     float worldMins[3];
     float worldMaxs[3];
 
-    for (int i = 0; i < 3; i++)
-    {
-        worldMins[i] = g_Corner1[i];
-        worldMaxs[i] = g_Corner2[i];
+    // --------------------------------------------------------
+    // Normalize the two world-space corners.
+    // --------------------------------------------------------
 
-        if (worldMins[i] > worldMaxs[i])
+    for (int axis = 0; axis < 3; axis++)
+    {
+        if (g_TriggerPoints[0][axis] < g_TriggerPoints[1][axis])
         {
-            float temp = worldMins[i];
-            worldMins[i] = worldMaxs[i];
-            worldMaxs[i] = temp;
+            worldMins[axis] = g_TriggerPoints[0][axis];
+            worldMaxs[axis] = g_TriggerPoints[1][axis];
+        }
+        else
+        {
+            worldMins[axis] = g_TriggerPoints[1][axis];
+            worldMaxs[axis] = g_TriggerPoints[0][axis];
         }
     }
 
-    // ========================================================
-    // Calculate center
-    // ========================================================
+    // --------------------------------------------------------
+    // Calculate center of the box.
+    // --------------------------------------------------------
 
     float origin[3];
 
-    origin[0] = (worldMins[0] + worldMaxs[0]) * 0.5;
-    origin[1] = (worldMins[1] + worldMaxs[1]) * 0.5;
-    origin[2] = (worldMins[2] + worldMaxs[2]) * 0.5;
-
-    // ========================================================
-    // Convert to local bounds
-    // ========================================================
-
-    float mins[3];
-    float maxs[3];
-
-    for (int i = 0; i < 3; i++)
+    for (int axis = 0; axis < 3; axis++)
     {
-        mins[i] = worldMins[i] - origin[i];
-        maxs[i] = worldMaxs[i] - origin[i];
+        origin[axis] =
+            (worldMins[axis] + worldMaxs[axis]) * 0.5;
     }
 
-    // ========================================================
-    // Create entity
-    // ========================================================
+    // --------------------------------------------------------
+    // Calculate local bounds.
+    //
+    // Since origin is the center:
+    //
+    // local mins = world mins - origin
+    // local maxs = world maxs - origin
+    //
+    // This guarantees:
+    //
+    // mins <= 0
+    // maxs >= 0
+    // --------------------------------------------------------
 
-    int entity = CreateEntityByName("trigger_multiple");
+    float localMins[3];
+    float localMaxs[3];
+
+    for (int axis = 0; axis < 3; axis++)
+    {
+        localMins[axis] =
+            worldMins[axis] - origin[axis];
+
+        localMaxs[axis] =
+            worldMaxs[axis] - origin[axis];
+    }
+
+    // --------------------------------------------------------
+    // Create trigger entity.
+    // --------------------------------------------------------
+
+    int entity = CreateEntityByName(
+        "trigger_multiple"
+    );
 
     if (entity == -1)
     {
-        PrintToServer(
-            "[Trigger] ERROR: Failed to create trigger_multiple."
+        ReplyToCommand(
+            client,
+            "[Trigger] ERROR: CreateEntityByName failed."
         );
 
         return;
     }
 
-    // ========================================================
-    // Target name
-    // ========================================================
+    // --------------------------------------------------------
+    // Target name.
+    // --------------------------------------------------------
 
     DispatchKeyValue(
         entity,
@@ -324,16 +332,23 @@ void CreateTrigger(const char[] name)
         name
     );
 
-    // ========================================================
-    // Spawn flags
+    // --------------------------------------------------------
+    // Trigger configuration.
     //
-    // 1 = Clients
-    // ========================================================
+    // Spawnflag 64 = clients.
+    // Wait 0 = can trigger again immediately.
+    // --------------------------------------------------------
 
     DispatchKeyValue(
         entity,
         "spawnflags",
-        "1"
+        "64"
+    );
+
+    DispatchKeyValue(
+        entity,
+        "wait",
+        "0"
     );
 
     DispatchKeyValue(
@@ -342,16 +357,37 @@ void CreateTrigger(const char[] name)
         "0"
     );
 
-    // ========================================================
-    // Spawn
-    // ========================================================
+    // --------------------------------------------------------
+    // Spawn.
+    // --------------------------------------------------------
 
-    DispatchSpawn(entity);
+    if (!DispatchSpawn(entity))
+    {
+        ReplyToCommand(
+            client,
+            "[Trigger] ERROR: DispatchSpawn failed."
+        );
+
+        AcceptEntityInput(
+            entity,
+            "Kill"
+        );
+
+        return;
+    }
+
+    // --------------------------------------------------------
+    // Activate.
+    // --------------------------------------------------------
+
     ActivateEntity(entity);
 
-    // ========================================================
-    // Position
-    // ========================================================
+    // --------------------------------------------------------
+    // Move entity to center of requested volume.
+    //
+    // This must happen before calculating the effective local
+    // bounds relative to the entity origin.
+    // --------------------------------------------------------
 
     TeleportEntity(
         entity,
@@ -360,22 +396,41 @@ void CreateTrigger(const char[] name)
         NULL_VECTOR
     );
 
-    // ========================================================
+    // --------------------------------------------------------
     // IMPORTANT:
-    // Give the entity a model index so the engine creates
-    // the collision representation for the trigger.
-    // ========================================================
+    //
+    // trigger_multiple is a brush entity.
+    //
+    // Give it a model so the engine initializes its brush/
+    // collision representation.
+    // --------------------------------------------------------
 
-    SetEntProp(
+    SetEntityModel(
         entity,
-        Prop_Send,
-        "m_nModelIndex",
-        1
+        TRIGGER_MODEL
     );
 
-    // ========================================================
-    // Solid type = SOLID_BBOX
-    // ========================================================
+    // --------------------------------------------------------
+    // Set collision bounds.
+    // --------------------------------------------------------
+
+    SetEntPropVector(
+        entity,
+        Prop_Send,
+        "m_vecMins",
+        localMins
+    );
+
+    SetEntPropVector(
+        entity,
+        Prop_Send,
+        "m_vecMaxs",
+        localMaxs
+    );
+
+    // --------------------------------------------------------
+    // SOLID_BBOX.
+    // --------------------------------------------------------
 
     SetEntProp(
         entity,
@@ -384,49 +439,64 @@ void CreateTrigger(const char[] name)
         2
     );
 
-    // ========================================================
-    // Solid flags
-    // ========================================================
+    // --------------------------------------------------------
+    // Trigger solid flags.
+    //
+    // FSOLID_TRIGGER = 8
+    // --------------------------------------------------------
 
     SetEntProp(
         entity,
         Prop_Send,
         "m_usSolidFlags",
-        152
+        8
     );
 
-    // ========================================================
-    // Collision group
-    // ========================================================
+    // --------------------------------------------------------
+    // Collision group.
+    //
+    // Keep the trigger as a trigger rather than a blocking
+    // physical object.
+    // --------------------------------------------------------
 
     SetEntProp(
         entity,
         Prop_Send,
         "m_CollisionGroup",
-        11
+        1
     );
 
-    // ========================================================
-    // Collision bounds
-    // ========================================================
+    // --------------------------------------------------------
+    // Reapply the bounds after model/solid initialization.
+    //
+    // SetEntityModel() can alter the entity's collision state,
+    // so explicitly set our desired bounds afterward.
+    // --------------------------------------------------------
 
     SetEntPropVector(
         entity,
         Prop_Send,
         "m_vecMins",
-        mins
+        localMins
     );
 
     SetEntPropVector(
         entity,
         Prop_Send,
         "m_vecMaxs",
-        maxs
+        localMaxs
     );
 
-    // ========================================================
-    // Hook touch
-    // ========================================================
+    SetEntProp(
+        entity,
+        Prop_Send,
+        "m_nSolidType",
+        2
+    );
+
+    // --------------------------------------------------------
+    // Hook touches.
+    // --------------------------------------------------------
 
     SDKHook(
         entity,
@@ -440,18 +510,13 @@ void CreateTrigger(const char[] name)
         OnTriggerEndTouch
     );
 
-    // ========================================================
-    // Enable
-    // ========================================================
+    // --------------------------------------------------------
+    // Diagnostics.
+    // --------------------------------------------------------
 
-    AcceptEntityInput(
-        entity,
-        "Enable"
+    PrintToServer(
+        "========================================"
     );
-
-    // ========================================================
-    // Debug
-    // ========================================================
 
     PrintToServer(
         "[Trigger] Created \"%s\"",
@@ -486,25 +551,44 @@ void CreateTrigger(const char[] name)
 
     PrintToServer(
         "[Trigger] Local mins: %.3f %.3f %.3f",
-        mins[0],
-        mins[1],
-        mins[2]
+        localMins[0],
+        localMins[1],
+        localMins[2]
     );
 
     PrintToServer(
         "[Trigger] Local maxs: %.3f %.3f %.3f",
-        maxs[0],
-        maxs[1],
-        maxs[2]
+        localMaxs[0],
+        localMaxs[1],
+        localMaxs[2]
+    );
+
+    PrintToServer(
+        "[Trigger] Model: %s",
+        TRIGGER_MODEL
+    );
+
+    PrintToServer(
+        "========================================"
+    );
+
+    ReplyToCommand(
+        client,
+        "[Trigger] Created \"%s\" (entity %d).",
+        name,
+        entity
     );
 }
 
 
 // ============================================================
-// Trigger StartTouch
+// Start touch
 // ============================================================
 
-public void OnTriggerStartTouch(int entity, int other)
+public void OnTriggerStartTouch(
+    int entity,
+    int other
+)
 {
     if (other < 1 || other > MaxClients)
     {
@@ -541,7 +625,14 @@ public void OnTriggerStartTouch(int entity, int other)
 }
 
 
-public void OnTriggerEndTouch(int entity, int other)
+// ============================================================
+// End touch
+// ============================================================
+
+public void OnTriggerEndTouch(
+    int entity,
+    int other
+)
 {
     if (other < 1 || other > MaxClients)
     {
@@ -574,5 +665,35 @@ public void OnTriggerEndTouch(int entity, int other)
         other,
         name,
         entity
+    );
+}
+
+
+// ============================================================
+// Usage
+// ============================================================
+
+void PrintTriggerUsage(
+    int client
+)
+{
+    ReplyToCommand(
+        client,
+        "[Trigger] Commands:"
+    );
+
+    ReplyToCommand(
+        client,
+        "  sm_trigger point"
+    );
+
+    ReplyToCommand(
+        client,
+        "  sm_trigger create <name>"
+    );
+
+    ReplyToCommand(
+        client,
+        "  sm_trigger reset"
     );
 }
