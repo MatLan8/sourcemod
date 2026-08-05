@@ -3,12 +3,12 @@
 #include "Checkpoint/globals.inc"
 #include "Checkpoint/manage.inc"
 #include "Checkpoint/files.inc"
-#include "Checkpoint/debug.inc"
 
 
 // ============================================================
 // Plugin start
 // ============================================================
+
 
 public void OnPluginStart()
 {
@@ -19,29 +19,8 @@ public void OnPluginStart()
         "sm_checkpoint",
         Command_Checkpoint
     );
-
-    CreateTimer(
-        DRAW_INTERVAL,
-        Timer_DrawCheckpointPlanes,
-        _,
-        TIMER_REPEAT | TIMER_FLAG_NO_MAPCHANGE
-    );
 }
 
-
-// ============================================================
-// Map start
-// ============================================================
-
-public void OnMapStart()
-{
-    g_DrawEnabled = false;
-
-    g_BeamSprite =
-        PrecacheModel(
-            "materials/sprites/laserbeam.vmt"
-        );
-}
 
 // ============================================================
 // Main checkpoint command
@@ -83,12 +62,6 @@ public Action Command_Checkpoint(
             client,
             "  sm_checkpoint order <index> <index> ..."
         );
-
-        ReplyToCommand(
-            client,
-            "  sm_checkpoint draw"
-        );
-
         return Plugin_Handled;
     }
 
@@ -143,16 +116,6 @@ public Action Command_Checkpoint(
             args
         );
     }
-    else if (StrEqual(command, "draw"))
-    {
-        g_DrawEnabled = !g_DrawEnabled;
-
-        ReplyToCommand(
-            client,
-            "[Checkpoint] Drawing %s.",
-            g_DrawEnabled ? "enabled" : "disabled"
-        );
-    }
     else
     {
         ReplyToCommand(
@@ -163,23 +126,4 @@ public Action Command_Checkpoint(
     }
 
     return Plugin_Handled;
-}
-
-
-// ============================================================
-// Drawing timer
-// ============================================================
-
-public Action Timer_DrawCheckpointPlanes(
-    Handle timer
-)
-{
-    if (!g_DrawEnabled)
-    {
-        return Plugin_Continue;
-    }
-
-    DrawCheckpointPlanes();
-
-    return Plugin_Continue;
 }

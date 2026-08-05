@@ -1,13 +1,9 @@
-#if defined _recorder_globals_included
+#if defined _shared_globals_included
     #endinput
 #endif
-#define _recorder_globals_included
+#define _shared_globals_included
 
 #define MAX_ROCKET_SLOTS 16
-
-bool g_Recording = false;
-Handle g_RecordingFile = INVALID_HANDLE;
-int g_RecordRowNumber = 0;
 
 bool g_RocketFired[MAXPLAYERS + 1];
 int g_PlayerButtons[MAXPLAYERS + 1];
@@ -50,3 +46,23 @@ enum struct RocketSlot
 
 RocketSlot g_RocketSlots[MAX_ROCKET_SLOTS];
 int g_NextRocketID = 1;
+
+enum struct CheckpointData
+{
+    int entity;
+    char name[128];
+
+    float waypoint[3];
+    float angles[3];
+
+    float forwardVec[3];
+    float side[3];
+
+    float planeCenter[3];
+}
+
+char g_CurrentCourseName[128];
+ArrayList g_CurrentCourse;
+
+CheckpointData g_CurrentCheckpoint;
+int g_CurrentCheckpointIndex;

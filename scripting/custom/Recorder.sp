@@ -2,11 +2,17 @@
 #include <sdktools>
 #include <sdkhooks>
 
-#include "Recorder/globals.inc"
+bool g_Recording = false;
+Handle g_RecordingFile = INVALID_HANDLE;
+int g_RecordRowNumber = 0;
+
+#include "Shared/globals.inc"
+#include "Shared/input.inc"
+#include "Shared/player.inc"
+#include "Shared/rocket.inc"
 #include "Recorder/files.inc"
-#include "Recorder/input.inc"
-#include "Recorder/player.inc"
-#include "Recorder/rocket.inc"
+
+
 
 public Plugin myinfo =
 {
@@ -15,6 +21,7 @@ public Plugin myinfo =
     description = "Records synchronized TF2 rocket-jump data for AI training",
     version = "2.0"
 };
+
 
 public void OnPluginStart()
 {

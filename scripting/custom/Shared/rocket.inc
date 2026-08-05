@@ -1,7 +1,7 @@
-#if defined _recorder_rocket_included
+#if defined _shared_rocket_included
     #endinput
 #endif
-#define _recorder_rocket_included
+#define _shared_rocket_included
 
 void HandleRocketEntityCreated(int entity, const char[] classname)
 {

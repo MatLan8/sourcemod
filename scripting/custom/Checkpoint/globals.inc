@@ -9,12 +9,6 @@
 
 #define PLANE_OFFSET       10.0
 
-#define DRAW_DISTANCE      800.0
-
-#define PLANE_LINES        25
-#define DRAW_INTERVAL      1.0
-#define BEAM_WIDTH         4.0
-
 enum struct CheckpointData
 {
     int entity;
@@ -30,7 +24,3 @@ enum struct CheckpointData
 }
 
 ArrayList g_Checkpoints;
-
-int g_BeamSprite;
-
-bool g_DrawEnabled = false;

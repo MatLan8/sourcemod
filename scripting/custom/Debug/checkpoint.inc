@@ -1,8 +1,8 @@
-#if defined _checkpoint_debug_included
+#if defined _debug_checkpoint_included
     #endinput
 #endif
 
-#define _checkpoint_debug_included
+#define _debug_checkpoint_included
 
 // ============================================================
 // Drawing
@@ -10,8 +10,8 @@
 
 void DrawCheckpointPlanes()
 {
-    if (g_Checkpoints == null ||
-        g_Checkpoints.Length == 0)
+    if (g_CurrentCourse == null ||
+        g_CurrentCourse.Length == 0)
     {
         return;
     }
@@ -36,11 +36,11 @@ void DrawCheckpointPlanes()
             playerPos
         );
 
-        for (int i = 0; i < g_Checkpoints.Length; i++)
+        for (int i = 0; i < g_CurrentCourse.Length; i++)
         {
             CheckpointData checkpoint;
 
-            g_Checkpoints.GetArray(
+            g_CurrentCourse.GetArray(
                 i,
                 checkpoint
             );

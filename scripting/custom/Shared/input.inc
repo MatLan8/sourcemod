@@ -1,7 +1,7 @@
-#if defined _recorder_input_included
+#if defined _shared_input_included
     #endinput
 #endif
-#define _recorder_input_included
+#define _shared_input_included
 
 public Action OnPlayerRunCmd(int client, int &buttons, int &impulse, float vel[3], float angles[3], int &weapon, int &subtype, int &cmdnum, int &tickcount, int &seed, int mouse[2])
 {

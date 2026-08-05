@@ -1,7 +1,7 @@
-#if defined _recorder_player_included
+#if defined _shared_player_included
     #endinput
 #endif
-#define _recorder_player_included
+#define _shared_player_included
 
 void GatherPlayerSnapshot(int client, PlayerSnapshot player)
 {
