@@ -5,24 +5,288 @@
 
 #include <sdkhooks>
 
+// ============================================================
+// Find runtime trigger by name
+//
+// Returns the ArrayList index, or -1 if not found.
+// ============================================================
+
+int FindTriggerByName(
+    const char[] name
+)
+{
+    for (int i = 0; i < g_Triggers.Length; i++)
+    {
+        TriggerData trigger;
+
+        g_Triggers.GetArray(
+            i,
+            trigger
+        );
+
+        if (StrEqual(
+                trigger.name,
+                name,
+                false
+            ))
+        {
+            return i;
+        }
+    }
+
+    return -1;
+}
+
+
+// ============================================================
+// Check whether two trigger bounds are different.
+// ============================================================
+
+bool TriggerBoundsChanged(
+    TriggerData &existing,
+    TriggerData &updated
+)
+{
+    for (int axis = 0; axis < 3; axis++)
+    {
+        if (
+            FloatAbs(
+                existing.worldMins[axis] -
+                updated.worldMins[axis]
+            ) > 0.01
+        )
+        {
+            return true;
+        }
+
+        if (
+            FloatAbs(
+                existing.worldMaxs[axis] -
+                updated.worldMaxs[axis]
+            ) > 0.01
+        )
+        {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+
+// ============================================================
+// Synchronize one trigger.
+//
+// If the trigger doesn't exist:
+//     create it.
+//
+// If it exists and bounds haven't changed:
+//     do nothing.
+//
+// If it exists but bounds changed:
+//     kill old entity and recreate it.
+//
+// Returns true if the trigger exists/was successfully created.
+// ============================================================
+
+bool SyncTrigger(
+    TriggerData &cfgTrigger
+)
+{
+    int existingIndex = FindTriggerByName(
+        cfgTrigger.name
+    );
+
+
+    // ========================================================
+    // New trigger.
+    // ========================================================
+
+    if (existingIndex == -1)
+    {
+        int entity = CreateRuntimeTrigger(
+            cfgTrigger
+        );
+
+        if (entity == -1)
+        {
+            PrintToServer(
+                "[Trigger] ERROR: Failed to create \"%s\".",
+                cfgTrigger.name
+            );
+
+            return false;
+        }
+
+        cfgTrigger.entity = entity;
+
+        g_Triggers.PushArray(
+            cfgTrigger
+        );
+
+        PrintToServer(
+            "[Trigger] Created new trigger \"%s\" (entity %d).",
+            cfgTrigger.name,
+            entity
+        );
+
+        return true;
+    }
+
+
+    // ========================================================
+    // Existing trigger.
+    // ========================================================
+
+    TriggerData existing;
+
+    g_Triggers.GetArray(
+        existingIndex,
+        existing
+    );
+
+
+    // ========================================================
+    // Check whether its bounds changed.
+    // ========================================================
+
+    if (!TriggerBoundsChanged(
+            existing,
+            cfgTrigger
+        ))
+    {
+        // ----------------------------------------------------
+        // Nothing changed.
+        //
+        // Keep the existing entity and preserve its entity
+        // index in our TriggerData.
+        // ----------------------------------------------------
+
+        return true;
+    }
+
+
+    // ========================================================
+    // Bounds changed.
+    //
+    // Remove old runtime entity.
+    // ========================================================
+
+    if (
+        existing.entity > 0 &&
+        IsValidEntity(existing.entity)
+    )
+    {
+        AcceptEntityInput(
+            existing.entity,
+            "Kill"
+        );
+    }
+
+
+    // ========================================================
+    // Create replacement entity.
+    // ========================================================
+
+    int newEntity = CreateRuntimeTrigger(
+        cfgTrigger
+    );
+
+    if (newEntity == -1)
+    {
+        PrintToServer(
+            "[Trigger] ERROR: Failed to recreate \"%s\".",
+            cfgTrigger.name
+        );
+
+        return false;
+    }
+
+    cfgTrigger.entity = newEntity;
+
+
+    // ========================================================
+    // Replace TriggerData at the same ArrayList index.
+    //
+    // This is important because replacing instead of erasing
+    // keeps the ArrayList index stable.
+    // ========================================================
+
+    g_Triggers.SetArray(
+        existingIndex,
+        cfgTrigger
+    );
+
+
+    PrintToServer(
+        "[Trigger] Updated runtime trigger \"%s\" (entity %d).",
+        cfgTrigger.name,
+        newEntity
+    );
+
+    return true;
+}
+
+
+// ============================================================
+// Load / synchronize all triggers for the current map.
+//
+// This does NOT blindly recreate every trigger.
+//
+// Existing unchanged triggers are kept.
+// Changed triggers are recreated.
+// New triggers are created.
+// Removed CFG triggers are deleted.
+// ============================================================
+
 void LoadAll()
 {
-    // --------------------------------------------------------
-    // Initialize / clear runtime trigger list.
-    // --------------------------------------------------------
+    // ========================================================
+    // Make sure runtime trigger list exists.
+    // ========================================================
 
     if (g_Triggers == null)
     {
-        g_Triggers = new ArrayList(sizeof(TriggerData));
-    }
-    else
-    {
-        g_Triggers.Clear();
+        g_Triggers = new ArrayList(
+            sizeof(TriggerData)
+        );
     }
 
-    // --------------------------------------------------------
+
+    // ========================================================
+    // Remember current trigger by NAME.
+    //
+    // We cannot rely on g_CurrentTriggerIndex because entries
+    // can be erased from g_Triggers during synchronization.
+    // ========================================================
+
+    char previousCurrentName[128];
+
+    previousCurrentName[0] = '\0';
+
+    if (
+        g_CurrentTriggerIndex >= 0 &&
+        g_CurrentTriggerIndex < g_Triggers.Length
+    )
+    {
+        TriggerData currentTrigger;
+
+        g_Triggers.GetArray(
+            g_CurrentTriggerIndex,
+            currentTrigger
+        );
+
+        strcopy(
+            previousCurrentName,
+            sizeof(previousCurrentName),
+            currentTrigger.name
+        );
+    }
+
+
+    // ========================================================
     // Get current map.
-    // --------------------------------------------------------
+    // ========================================================
 
     char mapName[128];
 
@@ -31,13 +295,10 @@ void LoadAll()
         sizeof(mapName)
     );
 
-    // --------------------------------------------------------
-    // Build trigger CFG path.
-    //
-    // Example:
-    //
-    // data/MapConfigs/jump_map_triggers.cfg
-    // --------------------------------------------------------
+
+    // ========================================================
+    // Build CFG path.
+    // ========================================================
 
     char path[PLATFORM_MAX_PATH];
 
@@ -50,9 +311,12 @@ void LoadAll()
         mapName
     );
 
-    // --------------------------------------------------------
-    // Make sure the file exists.
-    // --------------------------------------------------------
+
+    // ========================================================
+    // If no CFG exists:
+    //
+    // remove every runtime trigger.
+    // ========================================================
 
     if (!FileExists(path))
     {
@@ -61,16 +325,44 @@ void LoadAll()
             path
         );
 
+
+        for (int i = g_Triggers.Length - 1; i >= 0; i--)
+        {
+            TriggerData trigger;
+
+            g_Triggers.GetArray(
+                i,
+                trigger
+            );
+
+            if (
+                trigger.entity > 0 &&
+                IsValidEntity(trigger.entity)
+            )
+            {
+                AcceptEntityInput(
+                    trigger.entity,
+                    "Kill"
+                );
+            }
+        }
+
+
+        g_Triggers.Clear();
+
         g_CurrentTriggerIndex = -1;
 
         return;
     }
 
-    // --------------------------------------------------------
-    // Root is "Triggers".
-    // --------------------------------------------------------
 
-    KeyValues kv = new KeyValues("Triggers");
+    // ========================================================
+    // Load KeyValues.
+    // ========================================================
+
+    KeyValues kv = new KeyValues(
+        "Triggers"
+    );
 
     if (!kv.ImportFromFile(path))
     {
@@ -81,156 +373,53 @@ void LoadAll()
 
         delete kv;
 
-        g_CurrentTriggerIndex = -1;
-
         return;
     }
 
-    kv.Rewind();
 
-    // --------------------------------------------------------
-    // Check whether this is a course-based trigger file.
+    // ========================================================
+    // Keep track of every trigger found in the CFG.
     //
-    // Course structure:
-    //
-    // Triggers
-    // {
-    //     Courses
-    //     {
-    //         Basic
-    //         {
-    //             rjai_0
-    //             rjai_1
-    //         }
-    //     }
-    // }
-    // --------------------------------------------------------
+    // Used later to remove runtime triggers which no longer
+    // exist in the configuration.
+    // ========================================================
+
+    StringMap foundTriggers = new StringMap();
+
+
+    // ========================================================
+    // Determine whether this is a course-based file.
+    // ========================================================
+
+    kv.Rewind();
 
     bool hasCourses = kv.JumpToKey(
         "Courses",
         false
     );
 
+
+    // ========================================================
+    // FLAT TRIGGER FILE
+    //
+    // Triggers
+    // {
+    //     rjai_0
+    //     {
+    //     }
+    //
+    //     rjai_1
+    //     {
+    //     }
+    // }
+    // ========================================================
+
     if (!hasCourses)
     {
-        // ====================================================
-        // FLAT TRIGGER LIST
-        // ====================================================
-
         kv.Rewind();
 
-        if (!kv.GotoFirstSubKey(false))
+        if (kv.GotoFirstSubKey(false))
         {
-            PrintToServer(
-                "[Trigger] Trigger file contains no triggers."
-            );
-
-            delete kv;
-
-            g_CurrentTriggerIndex = -1;
-
-            return;
-        }
-
-        do
-        {
-            char triggerName[128];
-
-            kv.GetSectionName(
-                triggerName,
-                sizeof(triggerName)
-            );
-
-            // ------------------------------------------------
-            // Only accept rjai_* entries.
-            // ------------------------------------------------
-
-            if (StrContains(
-                    triggerName,
-                    "rjai_",
-                    false
-                ) != 0)
-            {
-                continue;
-            }
-
-            TriggerData trigger;
-
-            LoadTriggerFromKeyValues(
-                kv,
-                trigger
-            );
-
-            // ------------------------------------------------
-            // Flat trigger keeps its original name.
-            // ------------------------------------------------
-
-            strcopy(
-                trigger.name,
-                sizeof(trigger.name),
-                triggerName
-            );
-
-            // ------------------------------------------------
-            // Create runtime entity.
-            // ------------------------------------------------
-
-            int entity = CreateRuntimeTrigger(
-                trigger
-            );
-
-            if (entity == -1)
-            {
-                continue;
-            }
-
-            trigger.entity = entity;
-
-            g_Triggers.PushArray(
-                trigger
-            );
-
-        } while (kv.GotoNextKey(false));
-    }
-    else
-    {
-        // ====================================================
-        // COURSE-BASED TRIGGER LIST
-        // ====================================================
-
-        // We are currently inside "Courses".
-
-        if (!kv.GotoFirstSubKey(false))
-        {
-            PrintToServer(
-                "[Trigger] Courses section contains no courses."
-            );
-
-            delete kv;
-
-            g_CurrentTriggerIndex = -1;
-
-            return;
-        }
-
-        do
-        {
-            char courseName[128];
-
-            kv.GetSectionName(
-                courseName,
-                sizeof(courseName)
-            );
-
-            // ------------------------------------------------
-            // We are now inside a course.
-            // ------------------------------------------------
-
-            if (!kv.GotoFirstSubKey(false))
-            {
-                continue;
-            }
-
             do
             {
                 char triggerName[128];
@@ -240,9 +429,10 @@ void LoadAll()
                     sizeof(triggerName)
                 );
 
-                // --------------------------------------------
+
+                // ------------------------------------------------
                 // Only accept rjai_* entries.
-                // --------------------------------------------
+                // ------------------------------------------------
 
                 if (StrContains(
                         triggerName,
@@ -253,6 +443,21 @@ void LoadAll()
                     continue;
                 }
 
+
+                // ------------------------------------------------
+                // Mark as found.
+                // ------------------------------------------------
+
+                foundTriggers.SetValue(
+                    triggerName,
+                    1
+                );
+
+
+                // ------------------------------------------------
+                // Load trigger data.
+                // ------------------------------------------------
+
                 TriggerData trigger;
 
                 LoadTriggerFromKeyValues(
@@ -260,60 +465,283 @@ void LoadAll()
                     trigger
                 );
 
-                // --------------------------------------------
-                // Runtime name:
-                //
-                // Basic + "_" + rjai_1
-                //
-                // = Basic_rjai_1
-                // --------------------------------------------
 
-                Format(
+                // ------------------------------------------------
+                // Runtime name is simply rjai_X.
+                // ------------------------------------------------
+
+                strcopy(
                     trigger.name,
                     sizeof(trigger.name),
-                    "%s_%s",
-                    courseName,
                     triggerName
                 );
 
-                // --------------------------------------------
-                // Create runtime entity.
-                // --------------------------------------------
 
-                int entity = CreateRuntimeTrigger(
-                    trigger
-                );
+                // ------------------------------------------------
+                // Synchronize.
+                // ------------------------------------------------
 
-                if (entity == -1)
-                {
-                    continue;
-                }
-
-                trigger.entity = entity;
-
-                g_Triggers.PushArray(
+                SyncTrigger(
                     trigger
                 );
 
             } while (kv.GotoNextKey(false));
-
-            // --------------------------------------------
-            // Return from course to Courses.
-            // --------------------------------------------
-
-            kv.GoBack();
-
-        } while (kv.GotoNextKey(false));
+        }
     }
 
-    // --------------------------------------------------------
-    // Set initial current trigger.
-    // --------------------------------------------------------
 
-    if (g_Triggers.Length > 0)
+    // ========================================================
+    // COURSE-BASED TRIGGER FILE
+    //
+    // Triggers
+    // {
+    //     Courses
+    //     {
+    //         Basic
+    //         {
+    //             rjai_0
+    //             {
+    //             }
+    //
+    //             rjai_1
+    //             {
+    //             }
+    //         }
+    //
+    //         Advanced
+    //         {
+    //             ...
+    //         }
+    //     }
+    // }
+    // ========================================================
+
+    else
+    {
+        // ----------------------------------------------------
+        // Currently inside Courses.
+        // ----------------------------------------------------
+
+        if (kv.GotoFirstSubKey(false))
+        {
+            do
+            {
+                char courseName[128];
+
+                kv.GetSectionName(
+                    courseName,
+                    sizeof(courseName)
+                );
+
+
+                // ------------------------------------------------
+                // Enter course.
+                // ------------------------------------------------
+
+                if (!kv.GotoFirstSubKey(false))
+                {
+                    continue;
+                }
+
+
+                do
+                {
+                    char triggerName[128];
+
+                    kv.GetSectionName(
+                        triggerName,
+                        sizeof(triggerName)
+                    );
+
+
+                    // ------------------------------------------------
+                    // Only accept rjai_* entries.
+                    // ------------------------------------------------
+
+                    if (StrContains(
+                            triggerName,
+                            "rjai_",
+                            false
+                        ) != 0)
+                    {
+                        continue;
+                    }
+
+
+                    // ------------------------------------------------
+                    // Build runtime name.
+                    //
+                    // Basic + "_" + rjai_1
+                    //
+                    // = Basic_rjai_1
+                    // ------------------------------------------------
+
+                    char fullName[128];
+
+                    Format(
+                        fullName,
+                        sizeof(fullName),
+                        "%s_%s",
+                        courseName,
+                        triggerName
+                    );
+
+
+                    // ------------------------------------------------
+                    // Mark as found.
+                    // ------------------------------------------------
+
+                    foundTriggers.SetValue(
+                        fullName,
+                        1
+                    );
+
+
+                    // ------------------------------------------------
+                    // Load trigger data.
+                    // ------------------------------------------------
+
+                    TriggerData trigger;
+
+                    LoadTriggerFromKeyValues(
+                        kv,
+                        trigger
+                    );
+
+
+                    // ------------------------------------------------
+                    // Runtime name.
+                    // ------------------------------------------------
+
+                    strcopy(
+                        trigger.name,
+                        sizeof(trigger.name),
+                        fullName
+                    );
+
+
+                    // ------------------------------------------------
+                    // Synchronize.
+                    // ------------------------------------------------
+
+                    SyncTrigger(
+                        trigger
+                    );
+
+                } while (kv.GotoNextKey(false));
+
+
+                // ------------------------------------------------
+                // Return from course to Courses.
+                // ------------------------------------------------
+
+                kv.GoBack();
+
+            } while (kv.GotoNextKey(false));
+        }
+    }
+
+
+    // ========================================================
+    // Remove runtime triggers which no longer exist in CFG.
+    // ========================================================
+
+    for (
+        int i = g_Triggers.Length - 1;
+        i >= 0;
+        i--
+    )
+    {
+        TriggerData trigger;
+
+        g_Triggers.GetArray(
+            i,
+            trigger
+        );
+
+
+        if (!foundTriggers.ContainsKey(
+                trigger.name
+            ))
+        {
+            // ------------------------------------------------
+            // Kill runtime entity.
+            // ------------------------------------------------
+
+            if (
+                trigger.entity > 0 &&
+                IsValidEntity(trigger.entity)
+            )
+            {
+                AcceptEntityInput(
+                    trigger.entity,
+                    "Kill"
+                );
+            }
+
+
+            PrintToServer(
+                "[Trigger] Removed runtime trigger \"%s\".",
+                trigger.name
+            );
+
+
+            // ------------------------------------------------
+            // Remove from ArrayList.
+            // ------------------------------------------------
+
+            g_Triggers.Erase(i);
+        }
+    }
+
+
+    // ========================================================
+    // Restore previous current trigger by NAME.
+    //
+    // The ArrayList index may have changed because entries
+    // could have been removed.
+    // ========================================================
+
+    g_CurrentTriggerIndex = -1;
+
+    if (strlen(previousCurrentName) > 0)
+    {
+        g_CurrentTriggerIndex = FindTriggerByName(
+            previousCurrentName
+        );
+    }
+
+
+    // ========================================================
+    // If there was no previous current trigger, or it was
+    // deleted, select the first available trigger.
+    // ========================================================
+
+    if (
+        g_CurrentTriggerIndex == -1 &&
+        g_Triggers.Length > 0
+    )
     {
         g_CurrentTriggerIndex = 0;
+    }
 
+
+    // ========================================================
+    // Diagnostics.
+    // ========================================================
+
+    PrintToServer(
+        "[Trigger] Runtime trigger synchronization complete."
+    );
+
+    PrintToServer(
+        "[Trigger] Active runtime triggers: %d",
+        g_Triggers.Length
+    );
+
+
+    if (g_CurrentTriggerIndex >= 0)
+    {
         TriggerData currentTrigger;
 
         g_Triggers.GetArray(
@@ -330,21 +758,19 @@ void LoadAll()
     }
     else
     {
-        g_CurrentTriggerIndex = -1;
+        PrintToServer(
+            "[Trigger] No current trigger selected."
+        );
     }
 
-    // --------------------------------------------------------
-    // Diagnostics.
-    // --------------------------------------------------------
 
-    PrintToServer(
-        "[Trigger] Loaded %d runtime triggers.",
-        g_Triggers.Length
-    );
+    // ========================================================
+    // Cleanup.
+    // ========================================================
 
+    delete foundTriggers;
     delete kv;
 }
-
 
 // ============================================================
 // Load TriggerData from current KeyValues position
@@ -717,42 +1143,20 @@ bool SetTrigger(
         );
     }
 
+    int index = FindTriggerByName(fullName);
 
-    // ========================================================
-    // Search loaded runtime triggers.
-    // ========================================================
-
-    for (int i = 0; i < g_Triggers.Length; i++)
+    if (index != -1)
     {
-        TriggerData trigger;
+        g_CurrentTriggerIndex = index;
 
-        g_Triggers.GetArray(
-            i,
-            trigger
+        PrintToChat(
+            client,
+            "[Trigger] Current trigger set to: %s",
+            fullName
         );
 
-        if (StrEqual(
-                trigger.name,
-                fullName,
-                false
-            ))
-        {
-            g_CurrentTriggerIndex = i;
-
-            PrintToChat(
-                client,
-                "[Trigger] Current trigger set to: %s",
-                fullName
-            );
-
-            return true;
-        }
+        return true;
     }
-
-
-    // ========================================================
-    // Trigger was not found.
-    // ========================================================
 
     g_CurrentTriggerIndex = -1;
 
