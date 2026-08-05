@@ -32,7 +32,7 @@ void SaveCheckpoints(bool flat = false)
             Path_SM,
             path,
             sizeof(path),
-            "%s/%s_flat.cfg",
+            "%s/%s_checkpoints_flat.cfg",
             MAP_CONFIG_PATH,
             mapName
         );
@@ -43,7 +43,7 @@ void SaveCheckpoints(bool flat = false)
             Path_SM,
             path,
             sizeof(path),
-            "%s/%s.cfg",
+            "%s/%s_checkpoints.cfg",
             MAP_CONFIG_PATH,
             mapName
         );
@@ -266,7 +266,7 @@ void SaveCourse(int client, int args)
         Path_SM,
         path,
         sizeof(path),
-        "%s/%s.cfg",
+        "%s/%s_checkpoints.cfg",
         MAP_CONFIG_PATH,
         mapName
     );

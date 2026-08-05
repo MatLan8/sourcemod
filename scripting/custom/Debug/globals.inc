@@ -38,3 +38,24 @@ ArrayList g_CurrentCourse;
 
 CheckpointData g_CurrentCheckpoint;
 int g_CurrentCheckpointIndex;
+
+#define TRIGGER_MODEL "models/error.mdl"
+#define MAP_CONFIG_PATH "data/MapConfigs"
+
+enum struct TriggerData
+{
+    int entity;
+
+    char name[128];
+
+    float worldMins[3];
+    float worldMaxs[3];
+
+    float origin[3];
+
+    float localMins[3];
+    float localMaxs[3];
+}
+
+ArrayList g_Triggers;
+int g_CurrentTriggerIndex;
