@@ -8,7 +8,6 @@
 // ============================================================
 // Checkpoint generation
 // ============================================================
-
 void GenerateCheckpoints(int client)
 {
     g_Checkpoints.Clear();
@@ -16,14 +15,18 @@ void GenerateCheckpoints(int client)
     int ent = -1;
     int count = 0;
 
-    while ((ent = FindEntityByClassname(
-        ent,
-        "info_teleport_destination"
-    )) != -1)
+    while (
+        (ent = FindEntityByClassname(
+            ent,
+            "info_teleport_destination"
+        )) != -1
+    )
     {
         CheckpointData checkpoint;
 
-        checkpoint.entity = ent;
+        // ----------------------------------------------------
+        // Get checkpoint name.
+        // ----------------------------------------------------
 
         GetEntPropString(
             ent,
@@ -33,55 +36,24 @@ void GenerateCheckpoints(int client)
             sizeof(checkpoint.name)
         );
 
+        // ----------------------------------------------------
+        // Get checkpoint coordinates.
+        // ----------------------------------------------------
+
         GetEntPropVector(
             ent,
             Prop_Data,
             "m_vecOrigin",
-            checkpoint.waypoint
-        );
-
-        GetEntPropVector(
-            ent,
-            Prop_Data,
-            "m_angRotation",
-            checkpoint.angles
+            checkpoint.coordinates
         );
 
         // ----------------------------------------------------
-        // Forward vector from yaw
+        // Store checkpoint.
         // ----------------------------------------------------
 
-        float yawRad = DegToRad(checkpoint.angles[1]);
-
-        checkpoint.forwardVec[0] = Cosine(yawRad);
-        checkpoint.forwardVec[1] = Sine(yawRad);
-        checkpoint.forwardVec[2] = 0.0;
-
-        // ----------------------------------------------------
-        // Side vector
-        // ----------------------------------------------------
-
-        checkpoint.side[0] = -checkpoint.forwardVec[1];
-        checkpoint.side[1] = checkpoint.forwardVec[0];
-        checkpoint.side[2] = 0.0;
-
-        // ----------------------------------------------------
-        // Plane center
-        // 10 HU behind waypoint
-        // ----------------------------------------------------
-
-        checkpoint.planeCenter[0] =
-            checkpoint.waypoint[0]
-            - checkpoint.forwardVec[0] * PLANE_OFFSET;
-
-        checkpoint.planeCenter[1] =
-            checkpoint.waypoint[1]
-            - checkpoint.forwardVec[1] * PLANE_OFFSET;
-
-        checkpoint.planeCenter[2] =
-            checkpoint.waypoint[2];
-
-        g_Checkpoints.PushArray(checkpoint);
+        g_Checkpoints.PushArray(
+            checkpoint
+        );
 
         count++;
     }
@@ -91,7 +63,10 @@ void GenerateCheckpoints(int client)
         count
     );
 
-    if (client > 0 && IsClientInGame(client))
+    if (
+        client > 0 &&
+        IsClientInGame(client)
+    )
     {
         PrintToChat(
             client,
@@ -99,30 +74,34 @@ void GenerateCheckpoints(int client)
             count
         );
     }
+
     GenerateCaptures(client);
 }
+
+
+// ============================================================
+// Generate capture-area checkpoints
+//
+// Reads trigger_capture_area entities and stores:
+//   - capture point name
+//   - XYZ coordinates
+//
+// These are appended after the teleport destinations.
+// ============================================================
 
 void GenerateCaptures(int client)
 {
     int ent = -1;
     int count = 0;
 
-    while ((ent = FindEntityByClassname(ent, "trigger_capture_area")) != -1)
+    while (
+        (ent = FindEntityByClassname(
+            ent,
+            "trigger_capture_area"
+        )) != -1
+    )
     {
         CheckpointData checkpoint;
-
-        // Clear the entire structure first.
-        checkpoint.entity = ent;
-        checkpoint.name[0] = '\0';
-
-        for (int i = 0; i < 3; i++)
-        {
-            checkpoint.waypoint[i] = 0.0;
-            checkpoint.angles[i] = 0.0;
-            checkpoint.forwardVec[i] = 0.0;
-            checkpoint.side[i] = 0.0;
-            checkpoint.planeCenter[i] = 0.0;
-        }
 
         // ----------------------------------------------------
         // Get control point name.
@@ -137,21 +116,23 @@ void GenerateCaptures(int client)
         );
 
         // ----------------------------------------------------
-        // Capture area origin.
+        // Get capture area coordinates.
         // ----------------------------------------------------
 
         GetEntPropVector(
             ent,
             Prop_Data,
             "m_vecOrigin",
-            checkpoint.waypoint
+            checkpoint.coordinates
         );
 
         // ----------------------------------------------------
-        // Add to the end of the checkpoint array.
+        // Store checkpoint.
         // ----------------------------------------------------
 
-        g_Checkpoints.PushArray(checkpoint);
+        g_Checkpoints.PushArray(
+            checkpoint
+        );
 
         count++;
 
@@ -160,9 +141,9 @@ void GenerateCaptures(int client)
             count,
             ent,
             checkpoint.name,
-            checkpoint.waypoint[0],
-            checkpoint.waypoint[1],
-            checkpoint.waypoint[2]
+            checkpoint.coordinates[0],
+            checkpoint.coordinates[1],
+            checkpoint.coordinates[2]
         );
     }
 
@@ -171,7 +152,10 @@ void GenerateCaptures(int client)
         count
     );
 
-    if (client > 0 && IsClientInGame(client))
+    if (
+        client > 0 &&
+        IsClientInGame(client)
+    )
     {
         PrintToChat(
             client,
@@ -216,9 +200,9 @@ void PrintCheckpoints(int client)
             "[%d] \"%s\" | Pos: %.1f %.1f %.1f",
             i,
             checkpoint.name,
-            checkpoint.waypoint[0],
-            checkpoint.waypoint[1],
-            checkpoint.waypoint[2]
+            checkpoint.coordinates[0],
+            checkpoint.coordinates[1],
+            checkpoint.coordinates[2]
         );
     }
 

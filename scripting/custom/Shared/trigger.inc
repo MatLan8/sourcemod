@@ -43,8 +43,8 @@ int FindTriggerByName(
 // ============================================================
 
 bool TriggerBoundsChanged(
-    TriggerData &existing,
-    TriggerData &updated
+    TriggerData existing,
+    TriggerData updated
 )
 {
     for (int axis = 0; axis < 3; axis++)
@@ -90,7 +90,7 @@ bool TriggerBoundsChanged(
 // ============================================================
 
 bool SyncTrigger(
-    TriggerData &cfgTrigger
+    TriggerData cfgTrigger
 )
 {
     int existingIndex = FindTriggerByName(

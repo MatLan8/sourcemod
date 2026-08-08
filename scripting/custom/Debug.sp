@@ -99,7 +99,6 @@ public Action Command_Debug(
     );
 
 
-
     if (StrEqual(command, "drawCheckpoint", false))
     {
         g_DrawEnabled = !g_DrawEnabled;
@@ -266,6 +265,7 @@ public Action Command_Debug(
 
         return Plugin_Handled;
     }
+    
     else
     {
         ReplyToCommand(
@@ -278,7 +278,6 @@ public Action Command_Debug(
     return Plugin_Handled;
 }
 
-
 public Action Timer_DrawCheckpointPlanes(
     Handle timer
 )
@@ -288,7 +287,7 @@ public Action Timer_DrawCheckpointPlanes(
         return Plugin_Continue;
     }
 
-    DrawCheckpointPlanes();
+    DrawCheckpoints();
 
     return Plugin_Continue;
 }

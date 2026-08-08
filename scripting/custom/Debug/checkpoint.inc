@@ -4,17 +4,19 @@
 
 #define _debug_checkpoint_included
 
-// ============================================================
-// Drawing
-// ============================================================
+#define CHECKPOINT_MARKER_SIZE 40.0
 
-void DrawCheckpointPlanes()
+
+void DrawCheckpoints()
 {
-    if (g_CurrentCourse == null ||
-        g_CurrentCourse.Length == 0)
+    if (
+        g_CurrentCourse == null ||
+        g_CurrentCourse.Length == 0
+    )
     {
         return;
     }
+
 
     for (int client = 1; client <= MaxClients; client++)
     {
@@ -23,11 +25,14 @@ void DrawCheckpointPlanes()
             continue;
         }
 
-        if (IsClientSourceTV(client) ||
-            IsClientReplay(client))
+        if (
+            IsClientSourceTV(client) ||
+            IsClientReplay(client)
+        )
         {
             continue;
         }
+
 
         float playerPos[3];
 
@@ -35,6 +40,7 @@ void DrawCheckpointPlanes()
             client,
             playerPos
         );
+
 
         for (int i = 0; i < g_CurrentCourse.Length; i++)
         {
@@ -45,30 +51,40 @@ void DrawCheckpointPlanes()
                 checkpoint
             );
 
+
+            // ------------------------------------------------
+            // Distance check.
+            // ------------------------------------------------
+
             float dx =
                 playerPos[0] -
-                checkpoint.waypoint[0];
+                checkpoint.coordinates[0];
 
             float dy =
                 playerPos[1] -
-                checkpoint.waypoint[1];
+                checkpoint.coordinates[1];
 
             float dz =
                 playerPos[2] -
-                checkpoint.waypoint[2];
+                checkpoint.coordinates[2];
 
             float distanceSquared =
                 dx * dx +
                 dy * dy +
                 dz * dz;
 
-            if (distanceSquared >
-                DRAW_DISTANCE * DRAW_DISTANCE)
+
+            if (
+                distanceSquared >
+                DRAW_DISTANCE *
+                DRAW_DISTANCE
+            )
             {
                 continue;
             }
 
-            DrawCheckpointPlane(
+
+            DrawCheckpointMarker(
                 client,
                 checkpoint
             );
@@ -77,89 +93,81 @@ void DrawCheckpointPlanes()
 }
 
 
-// ============================================================
-// Draw individual checkpoint plane
-// ============================================================
 
-void DrawCheckpointPlane(
+
+void DrawCheckpointMarker(
     int client,
     CheckpointData checkpoint
 )
 {
-    float halfWidth =
-        PLANE_WIDTH * 0.5;
+    float center[3];
+
+    center[0] = checkpoint.coordinates[0];
+    center[1] = checkpoint.coordinates[1];
+    center[2] = checkpoint.coordinates[2] + 20.0;
+
+
+    // --------------------------------------------------------
+    // Marker dimensions.
+    // --------------------------------------------------------
+
+    float halfSize = CHECKPOINT_MARKER_SIZE * 0.5;
+
+
+    // --------------------------------------------------------
+    // Four corners of the horizontal square.
+    // --------------------------------------------------------
 
     float topLeft[3];
     float topRight[3];
-
     float bottomLeft[3];
     float bottomRight[3];
 
-    // --------------------------------------------------------
-    // Top-left
-    // --------------------------------------------------------
 
     topLeft[0] =
-        checkpoint.planeCenter[0] +
-        checkpoint.side[0] * halfWidth;
+        center[0] - halfSize;
 
     topLeft[1] =
-        checkpoint.planeCenter[1] +
-        checkpoint.side[1] * halfWidth;
+        center[1] - halfSize;
 
     topLeft[2] =
-        checkpoint.planeCenter[2] +
-        PLANE_UP_HEIGHT;
+        center[2];
 
-    // --------------------------------------------------------
-    // Top-right
-    // --------------------------------------------------------
 
     topRight[0] =
-        checkpoint.planeCenter[0] -
-        checkpoint.side[0] * halfWidth;
+        center[0] + halfSize;
 
     topRight[1] =
-        checkpoint.planeCenter[1] -
-        checkpoint.side[1] * halfWidth;
+        center[1] - halfSize;
 
     topRight[2] =
-        checkpoint.planeCenter[2] +
-        PLANE_UP_HEIGHT;
+        center[2];
 
-    // --------------------------------------------------------
-    // Bottom-left
-    // --------------------------------------------------------
 
     bottomLeft[0] =
-        checkpoint.planeCenter[0] +
-        checkpoint.side[0] * halfWidth;
+        center[0] - halfSize;
 
     bottomLeft[1] =
-        checkpoint.planeCenter[1] +
-        checkpoint.side[1] * halfWidth;
+        center[1] + halfSize;
 
     bottomLeft[2] =
-        checkpoint.planeCenter[2] -
-        PLANE_DOWN_HEIGHT;
+        center[2];
 
-    // --------------------------------------------------------
-    // Bottom-right
-    // --------------------------------------------------------
 
     bottomRight[0] =
-        checkpoint.planeCenter[0] -
-        checkpoint.side[0] * halfWidth;
+        center[0] + halfSize;
 
     bottomRight[1] =
-        checkpoint.planeCenter[1] -
-        checkpoint.side[1] * halfWidth;
+        center[1] + halfSize;
 
     bottomRight[2] =
-        checkpoint.planeCenter[2] -
-        PLANE_DOWN_HEIGHT;
+        center[2];
 
-    // Saturated, fully opaque blue.
+
+    // --------------------------------------------------------
+    // Marker color.
+    // --------------------------------------------------------
+
     int color[4] =
     {
         0,
@@ -168,57 +176,87 @@ void DrawCheckpointPlane(
         255
     };
 
+
     // --------------------------------------------------------
-    // Fill plane with horizontal beams
+    // Draw square.
+    //
+    // Since all four points have the same Z coordinate,
+    // the marker is always horizontal and does not depend
+    // on the player's viewing angle.
     // --------------------------------------------------------
 
-    for (int i = 0; i < PLANE_LINES; i++)
-    {
-        float t;
+    TE_SetupBeamPoints(
+        topLeft,
+        topRight,
+        g_BeamSprite,
+        0,
+        0,
+        0,
+        1.0,
+        BEAM_WIDTH,
+        BEAM_WIDTH,
+        0,
+        0.0,
+        color,
+        0
+    );
 
-        if (PLANE_LINES <= 1)
-        {
-            t = 0.0;
-        }
-        else
-        {
-            t =
-                float(i) /
-                float(PLANE_LINES - 1);
-        }
+    TE_SendToClient(client);
 
-        float start[3];
-        float end[3];
 
-        for (int axis = 0; axis < 3; axis++)
-        {
-            start[axis] =
-                topLeft[axis] +
-                (bottomLeft[axis] -
-                 topLeft[axis]) * t;
+    TE_SetupBeamPoints(
+        topRight,
+        bottomRight,
+        g_BeamSprite,
+        0,
+        0,
+        0,
+        1.0,
+        BEAM_WIDTH,
+        BEAM_WIDTH,
+        0,
+        0.0,
+        color,
+        0
+    );
 
-            end[axis] =
-                topRight[axis] +
-                (bottomRight[axis] -
-                 topRight[axis]) * t;
-        }
+    TE_SendToClient(client);
 
-        TE_SetupBeamPoints(
-            start,
-            end,
-            g_BeamSprite,
-            0,
-            0,
-            0,
-            1.0,
-            BEAM_WIDTH,
-            BEAM_WIDTH,
-            0,
-            0.0,
-            color,
-            0
-        );
 
-        TE_SendToClient(client);
-    }
+    TE_SetupBeamPoints(
+        bottomRight,
+        bottomLeft,
+        g_BeamSprite,
+        0,
+        0,
+        0,
+        1.0,
+        BEAM_WIDTH,
+        BEAM_WIDTH,
+        0,
+        0.0,
+        color,
+        0
+    );
+
+    TE_SendToClient(client);
+
+
+    TE_SetupBeamPoints(
+        bottomLeft,
+        topLeft,
+        g_BeamSprite,
+        0,
+        0,
+        0,
+        1.0,
+        BEAM_WIDTH,
+        BEAM_WIDTH,
+        0,
+        0.0,
+        color,
+        0
+    );
+
+    TE_SendToClient(client);
 }

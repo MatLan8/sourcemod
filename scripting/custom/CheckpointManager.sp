@@ -9,7 +9,6 @@
 // Plugin start
 // ============================================================
 
-
 public void OnPluginStart()
 {
     g_Checkpoints =
@@ -20,7 +19,6 @@ public void OnPluginStart()
         Command_Checkpoint
     );
 }
-
 
 // ============================================================
 // Main checkpoint command
@@ -55,6 +53,11 @@ public Action Command_Checkpoint(
 
         ReplyToCommand(
             client,
+            "  sm_checkpoint update"
+        );
+
+        ReplyToCommand(
+            client,
             "  sm_checkpoint savecourse <course_name> <checkpoint_index> ..."
         );
 
@@ -72,10 +75,13 @@ public Action Command_Checkpoint(
         command,
         sizeof(command)
     );
-
     if (StrEqual(command, "generate"))
     {
         GenerateCheckpoints(client);
+    }
+    else if (StrEqual(command, "update"))
+    {
+        Update(client);
     }
     else if (StrEqual(command, "print"))
     {

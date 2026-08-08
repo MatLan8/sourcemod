@@ -3,9 +3,6 @@
 #endif
 #define _shared_checkpoint_included
 
-#define CHECKPOINT_CONFIG_PATH "data/MapConfigs"
-
-
 // ============================================================
 // SetCourse
 //
@@ -22,7 +19,7 @@
 //     - g_CurrentCheckpoint = first checkpoint
 // ============================================================
 
-bool SetCourse(const char[] courseName = "")
+bool SetCourse(int client)
 {
     // --------------------------------------------------------
     // Clear previous course.
@@ -59,8 +56,8 @@ bool SetCourse(const char[] courseName = "")
         Path_SM,
         path,
         sizeof(path),
-        "%s/%s.cfg",
-        CHECKPOINT_CONFIG_PATH,
+        "%s/%s_checkpoints.cfg",
+        MAP_CONFIG_PATH,
         mapName
     );
 
@@ -341,8 +338,6 @@ void LoadCheckpointData(
     CheckpointData checkpoint
 )
 {
-    checkpoint.entity = -1;
-
     kv.GetString(
         "name",
         checkpoint.name,
@@ -350,25 +345,9 @@ void LoadCheckpointData(
         ""
     );
 
-    checkpoint.waypoint[0] = kv.GetFloat("x");
-    checkpoint.waypoint[1] = kv.GetFloat("y");
-    checkpoint.waypoint[2] = kv.GetFloat("z");
-
-    checkpoint.angles[0] = kv.GetFloat("yaw");
-    checkpoint.angles[1] = 0.0;
-    checkpoint.angles[2] = 0.0;
-
-    checkpoint.planeCenter[0] = kv.GetFloat("plane_x");
-    checkpoint.planeCenter[1] = kv.GetFloat("plane_y");
-    checkpoint.planeCenter[2] = kv.GetFloat("plane_z");
-
-    checkpoint.forwardVec[0] = kv.GetFloat("forward_x");
-    checkpoint.forwardVec[1] = kv.GetFloat("forward_y");
-    checkpoint.forwardVec[2] = kv.GetFloat("forward_z");
-
-    checkpoint.side[0] = kv.GetFloat("side_x");
-    checkpoint.side[1] = kv.GetFloat("side_y");
-    checkpoint.side[2] = kv.GetFloat("side_z");
+    checkpoint.coordinates[0] = kv.GetFloat("x");
+    checkpoint.coordinates[1] = kv.GetFloat("y");
+    checkpoint.coordinates[2] = kv.GetFloat("z");
 }
 
 
