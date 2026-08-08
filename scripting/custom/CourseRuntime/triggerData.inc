@@ -70,6 +70,13 @@ bool LoadTriggers()
     ArrayList loadedCourseNames =
         new ArrayList(ByteCountToCells(128));
 
+    if (g_AllCoursesTriggers == null)
+    {
+        g_AllCoursesTriggers = new ArrayList(
+            sizeof(CourseTriggers)
+        );
+    }
+
     // ========================================================
     // Check for Courses section.
     // ========================================================
@@ -91,7 +98,13 @@ bool LoadTriggers()
 
     if (!hasCourses)
     {
-        const char[] courseName = DEFAULT_COURSE_NAME;
+        char courseName[128];
+
+        strcopy(
+            courseName,
+            sizeof(courseName),
+            DEFAULT_COURSE_NAME
+        );
 
         loadedCourseNames.PushString(
             courseName
@@ -332,6 +345,7 @@ bool LoadTriggers()
         g_AllCoursesTriggers.Length
     );
 
+    FireCourseDataUpdated();
     return true;
 }
 
@@ -341,31 +355,25 @@ void LoadTriggerList(
     const char[] courseName
 )
 {
-    if (!kv.GotoFirstSubKey(false))
-    {
-        return;
-    }
-
     ArrayList loadedNames =
         new ArrayList(ByteCountToCells(128));
 
-    do
+    if (kv.GotoFirstSubKey(false))
     {
-        LoadTriggerData(
-            kv,
-            courseName,
-            triggers,
-            loadedNames
-        );
+        do
+        {
+            LoadTriggerData(
+                kv,
+                courseName,
+                triggers,
+                loadedNames
+            );
 
+        }
+        while (kv.GotoNextKey(false));
+
+        kv.GoBack();
     }
-    while (kv.GotoNextKey(false));
-
-    kv.GoBack();
-
-    // ----------------------------------------------------
-    // Remove triggers that disappeared from CFG.
-    // ----------------------------------------------------
 
     RemoveDeletedTriggers(
         triggers,
@@ -781,6 +789,123 @@ void ReadCfgValues(
 
     triggerCfg.localMaxs[2] =
         kv.GetFloat("localMaxs_z");
+}
+
+void RemoveDeletedCourses(
+    ArrayList loadedCourseNames
+)
+{
+    if (
+        g_AllCoursesTriggers == null ||
+        loadedCourseNames == null
+    )
+    {
+        return;
+    }
+
+    // --------------------------------------------------------
+    // Iterate backwards because we may erase entries.
+    // --------------------------------------------------------
+
+    for (
+        int i = g_AllCoursesTriggers.Length - 1;
+        i >= 0;
+        i--
+    )
+    {
+        CourseTriggers course;
+
+        g_AllCoursesTriggers.GetArray(
+            i,
+            course
+        );
+
+        // ----------------------------------------------------
+        // Check whether this course still exists in the CFG.
+        // ----------------------------------------------------
+
+        bool found = false;
+
+        for (
+            int j = 0;
+            j < loadedCourseNames.Length;
+            j++
+        )
+        {
+            char loadedCourseName[128];
+
+            loadedCourseNames.GetString(
+                j,
+                loadedCourseName,
+                sizeof(loadedCourseName)
+            );
+
+            if (StrEqual(
+                course.courseName,
+                loadedCourseName
+            ))
+            {
+                found = true;
+                break;
+            }
+        }
+
+        // ----------------------------------------------------
+        // Course still exists.
+        // ----------------------------------------------------
+
+        if (found)
+        {
+            continue;
+        }
+
+        // ----------------------------------------------------
+        // Course was removed from the CFG.
+        //
+        // Kill all runtime trigger entities belonging to it.
+        // ----------------------------------------------------
+
+        if (course.triggers != null)
+        {
+            for (
+                int j = 0;
+                j < course.triggers.Length;
+                j++
+            )
+            {
+                TriggerData trigger;
+
+                course.triggers.GetArray(
+                    j,
+                    trigger
+                );
+
+                if (
+                    trigger.entity > 0 &&
+                    IsValidEntity(trigger.entity)
+                )
+                {
+                    AcceptEntityInput(
+                        trigger.entity,
+                        "Kill"
+                    );
+                }
+            }
+
+            delete course.triggers;
+        }
+
+        // ----------------------------------------------------
+        // Remove the course from the cached course list.
+        // ----------------------------------------------------
+
+        g_AllCoursesTriggers.Erase(i);
+
+        PrintToServer(
+            "[Trigger] Removed deleted course \"%s\".",
+            course.courseName
+        );
+    }
 }
 
 int CreateRuntimeTrigger(

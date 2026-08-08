@@ -4,8 +4,8 @@
 #define _courseruntime_globals_included
 
 #define MAP_CONFIG_PATH "data/MapConfigs"
-#define MAX_NAME_LENGTH 128
 #define DEFAULT_COURSE_NAME "_Default_"
+#define TRIGGER_MODEL "models/error.mdl"
 
 enum struct TriggerCfgData
 {
@@ -51,12 +51,12 @@ enum struct CourseTriggers
 ArrayList g_AllCoursesCheckpoints;
 ArrayList g_AllCoursesTriggers;
 
-ArrayList g_CourseTriggers;
-ArrayList g_CourseCheckpoints;
-
 int g_CurrentCourseIndex = -1;
 int g_CurrentCheckpointIndex = -1;
 int g_CurrentTriggerIndex = -1;
 
 CheckpointData g_CurrentCheckpoint;
 TriggerData g_CurrentTrigger;
+
+// forwards
+Handle g_OnCourseDataUpdated;

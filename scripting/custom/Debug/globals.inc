@@ -9,38 +9,25 @@
 
 int g_BeamSprite;
 
-bool g_DrawEnabled = false;
+bool g_CheckpointDrawEnabled = false;
+bool g_TriggerDrawEnabled = false;
+
 
 enum struct CheckpointData
 {
     char name[128];
-
     float coordinates[3];
 }
 
-char g_CurrentCourseName[128];
-ArrayList g_CurrentCourse;
-
-CheckpointData g_CurrentCheckpoint;
-int g_CurrentCheckpointIndex;
-
-#define TRIGGER_MODEL "models/error.mdl"
-#define MAP_CONFIG_PATH "data/MapConfigs"
-
 enum struct TriggerData
 {
-    int entity;
-
     char name[128];
 
     float worldMins[3];
     float worldMaxs[3];
 
-    float origin[3];
-
-    float localMins[3];
-    float localMaxs[3];
+    int entity;
 }
 
+ArrayList g_Checkpoints;
 ArrayList g_Triggers;
-int g_CurrentTriggerIndex;

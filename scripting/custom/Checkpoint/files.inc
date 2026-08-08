@@ -149,6 +149,7 @@ void SaveCheckpoints(bool flat = false)
         path
     );
 
+    FireConfigChanged();
     delete kv;
 }
 
@@ -373,6 +374,7 @@ void SaveCourse(int client, int args)
         requestedCount
     );
 
+    FireConfigChanged();
     delete kv;
 }
 
@@ -633,7 +635,8 @@ bool Update(int client)
 
 
     delete kv;
-
+    
+    FireConfigChanged();
     return true;
 }
 

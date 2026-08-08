@@ -18,3 +18,6 @@ enum struct TriggerData
     float localMins[3];
     float localMaxs[3];
 }
+
+// forwards
+Handle g_OnTriggerConfigChanged;

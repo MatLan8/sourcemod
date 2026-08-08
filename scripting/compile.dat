@@ -15,10 +15,12 @@ Age=1560583573
 [C:\MATAS\RocketJumpAI\Server\tf\addons\sourcemod\scripting\custom\Recorder.sp]
 Age=1560639537
 [C:\MATAS\RocketJumpAI\Server\tf\addons\sourcemod\scripting\custom\Debug.sp]
-Age=1560770772
+Age=1560842908
 [C:\MATAS\RocketJumpAI\Server\tf\addons\sourcemod\scripting\custom\ConsoleFilter.sp]
 Age=1560641137
 [C:\MATAS\RocketJumpAI\Server\tf\addons\sourcemod\scripting\custom\CheckpointManager.sp]
-Age=1560770724
+Age=1560842822
 [C:\MATAS\RocketJumpAI\Server\tf\addons\sourcemod\scripting\custom\TriggerManager.sp]
-Age=1560676163
+Age=1560842804
+[C:\MATAS\RocketJumpAI\Server\tf\addons\sourcemod\scripting\custom\CourseRuntime.sp]
+Age=1560844773

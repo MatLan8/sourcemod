@@ -1,9 +1,10 @@
 #include <sourcemod>
 #include <sdktools>
+
 #include "Debug/globals.inc"
-#include "Shared/checkpoint.inc"
+#include "Shared/courseRuntime.inc"
 #include "Debug/checkpoint.inc"
-#include "Shared/trigger.inc"
+#include "Debug/trigger.inc"
 
 // ============================================================
 // Plugin start
@@ -19,7 +20,14 @@ public void OnPluginStart()
 
     CreateTimer(
         DRAW_INTERVAL,
-        Timer_DrawCheckpointPlanes,
+        Timer_DrawCheckpoints,
+        _,
+        TIMER_REPEAT | TIMER_FLAG_NO_MAPCHANGE
+    );
+
+    CreateTimer(
+        DRAW_INTERVAL,
+        Timer_DrawTriggers,
         _,
         TIMER_REPEAT | TIMER_FLAG_NO_MAPCHANGE
     );
@@ -32,18 +40,13 @@ public void OnPluginStart()
 
 public void OnMapStart()
 {
-    g_DrawEnabled = false;
+    g_CheckpointDrawEnabled = false;
+    g_TriggerDrawEnabled = false;
 
     g_BeamSprite =
         PrecacheModel(
             "materials/sprites/laserbeam.vmt"
         );
-    
-    PrecacheModel(
-        TRIGGER_MODEL,
-        true
-    );
-    SetCourse();
 }
 
 // ============================================================
@@ -64,27 +67,22 @@ public Action Command_Debug(
 
         ReplyToCommand(
             client,
-            "  sm_debug print"
+            "  sm_debug printCheckpoints"
         );
 
         ReplyToCommand(
             client,
-            "  sm_debug drawCheckpoint"
+            "  sm_debug printTriggers"
         );
 
         ReplyToCommand(
             client,
-            "  sm_debug course [name]"
+            "  sm_debug drawCheckpoints"
         );
 
         ReplyToCommand(
             client,
-            "  sm_debug next"
-        );
-
-        ReplyToCommand(
-            client,
-            "  sm_debug checkpoint <index>"
+            "  sm_debug drawTriggers"
         );
 
         return Plugin_Handled;
@@ -99,178 +97,32 @@ public Action Command_Debug(
     );
 
 
-    if (StrEqual(command, "drawCheckpoint", false))
+    if (StrEqual(command, "drawCheckpoints", false))
     {
-        g_DrawEnabled = !g_DrawEnabled;
+        g_CheckpointDrawEnabled = !g_CheckpointDrawEnabled;
 
         ReplyToCommand(
             client,
-            "[Checkpoint] Drawing %s.",
-            g_DrawEnabled ? "enabled" : "disabled"
+            "[Debug] Drawing %s.",
+            g_CheckpointDrawEnabled ? "enabled" : "disabled"
         );
     }
-    else if (StrEqual(command, "course", false))
+    else if (StrEqual(command, "drawTriggers", false))
     {
-        if (args >= 2)
-        {
-            char courseName[128];
-
-            GetCmdArg(
-                2,
-                courseName,
-                sizeof(courseName)
-            );
-
-            SetCourse(courseName);
-        }
-        else
-        {
-            SetCourse();
-        }
+        g_TriggerDrawEnabled = !g_TriggerDrawEnabled;
 
         ReplyToCommand(
             client,
-            "[Checkpoint] Course set to: %s",
-            g_CurrentCourseName
+            "[Debug] Drawing %s.",
+            g_TriggerDrawEnabled ? "enabled" : "disabled"
         );
-
-        ReplyToCommand(
-            client,
-            "[Checkpoint] Checkpoints: %d",
-            g_CurrentCourse.Length
-        );
-    }
-    else if (StrEqual(command, "checkpoint", false))
-    {
-        if (args < 2)
-        {
-            bool finished = UpdateCheckpoint();
-
-            if (finished)
-            {
-                ReplyToCommand(
-                    client,
-                    "[Checkpoint] Course completed!"
-                );
-            }
-            else
-            {
-                ReplyToCommand(
-                    client,
-                    "[Checkpoint] Advanced to checkpoint %d: %s",
-                    g_CurrentCheckpointIndex,
-                    g_CurrentCheckpoint.name
-                );
-            }
-
-            return Plugin_Handled;
-        }
-
-        char buffer[32];
-
-        GetCmdArg(
-            2,
-            buffer,
-            sizeof(buffer)
-        );
-
-        int index = StringToInt(buffer);
-
-        if (index < 0 || index >= g_CurrentCourse.Length)
-        {
-            ReplyToCommand(
-                client,
-                "[Checkpoint] Invalid checkpoint index: %d",
-                index
-            );
-
-            return Plugin_Handled;
-        }
-
-        UpdateCheckpoint(index);
-
-        ReplyToCommand(
-            client,
-            "[Checkpoint] Current checkpoint set to %d: %s",
-            g_CurrentCheckpointIndex,
-            g_CurrentCheckpoint.name
-        );
-
-        return Plugin_Handled;
-    }
-    else if (StrEqual(command, "load", false))
-    {
-        LoadAll();
-        return Plugin_Handled;
-    }
-    else if (StrEqual(command, "settrigger", false))
-    {
-        // --------------------------------------------------------
-        // settrigger <number>
-        // --------------------------------------------------------
-
-        if (args == 2)
-        {
-            char buffer[32];
-
-            GetCmdArg(
-                2,
-                buffer,
-                sizeof(buffer)
-            );
-
-            int triggerNumber = StringToInt(buffer);
-
-            SetTrigger(
-                "",
-                triggerNumber,
-                client
-            );
-
-            return Plugin_Handled;
-        }
-
-
-        // --------------------------------------------------------
-        // settrigger <course> <number>
-        // --------------------------------------------------------
-
-        if (args == 3)
-        {
-            char courseName[128];
-            char buffer[32];
-
-            GetCmdArg(
-                2,
-                courseName,
-                sizeof(courseName)
-            );
-
-            GetCmdArg(
-                3,
-                buffer,
-                sizeof(buffer)
-            );
-
-            int triggerNumber = StringToInt(buffer);
-
-            SetTrigger(
-                courseName,
-                triggerNumber,
-                client
-            );
-
-            return Plugin_Handled;
-        }
-
-        return Plugin_Handled;
     }
     
     else
     {
         ReplyToCommand(
             client,
-            "[Checkpoint] Unknown command: %s",
+            "[Debug] Unknown command: %s",
             command
         );
     }
@@ -278,11 +130,11 @@ public Action Command_Debug(
     return Plugin_Handled;
 }
 
-public Action Timer_DrawCheckpointPlanes(
+public Action Timer_DrawCheckpoints(
     Handle timer
 )
 {
-    if (!g_DrawEnabled)
+    if (!g_CheckpointDrawEnabled)
     {
         return Plugin_Continue;
     }
@@ -290,4 +142,27 @@ public Action Timer_DrawCheckpointPlanes(
     DrawCheckpoints();
 
     return Plugin_Continue;
+}
+
+public Action Timer_DrawTriggers(
+    Handle timer
+)
+{
+    if (!g_TriggerDrawEnabled)
+    {
+        return Plugin_Continue;
+    }
+
+    DrawTriggers();
+
+    return Plugin_Continue;
+}
+
+public void CourseRuntime_OnCourseDataUpdated()
+{
+    g_Checkpoints =
+        CourseRuntime_GetCurrentCourseCheckpoints();
+
+    g_Triggers =
+        CourseRuntime_GetCurrentCourseTriggers();
 }

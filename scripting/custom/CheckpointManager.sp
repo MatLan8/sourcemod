@@ -18,6 +18,11 @@ public void OnPluginStart()
         "sm_checkpoint",
         Command_Checkpoint
     );
+
+    g_OnCheckpointConfigChanged = CreateGlobalForward(
+        "CheckpointManager_OnConfigChanged",
+        ET_Ignore
+    );
 }
 
 // ============================================================
@@ -132,4 +137,18 @@ public Action Command_Checkpoint(
     }
 
     return Plugin_Handled;
+}
+
+void FireConfigChanged()
+{
+    if (g_OnCheckpointConfigChanged == null)
+    {
+        return;
+    }
+
+    Call_StartForward(
+        g_OnCheckpointConfigChanged
+    );
+
+    Call_Finish();
 }

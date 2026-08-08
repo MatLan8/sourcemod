@@ -13,3 +13,5 @@ enum struct CheckpointData
 }
 
 ArrayList g_Checkpoints;
+
+Handle g_OnCheckpointConfigChanged;

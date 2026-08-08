@@ -428,6 +428,7 @@ void Save(
     // ========================================================
 
     Reset(client);
+    FireConfigChanged();
 
     delete kv;
 }
@@ -661,7 +662,7 @@ void Delete(
             triggerName
         );
     }
-
+    FireConfigChanged();
 
     delete kv;
 }
@@ -907,6 +908,7 @@ void Update(
     // ========================================================
 
     Reset(client);
+    FireConfigChanged();
 
     delete kv;
 }

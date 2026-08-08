@@ -10,8 +10,8 @@
 void DrawCheckpoints()
 {
     if (
-        g_CurrentCourse == null ||
-        g_CurrentCourse.Length == 0
+        g_Checkpoints == null ||
+        g_Checkpoints.Length == 0
     )
     {
         return;
@@ -42,11 +42,11 @@ void DrawCheckpoints()
         );
 
 
-        for (int i = 0; i < g_CurrentCourse.Length; i++)
+        for (int i = 0; i < g_Checkpoints.Length; i++)
         {
             CheckpointData checkpoint;
 
-            g_CurrentCourse.GetArray(
+            g_Checkpoints.GetArray(
                 i,
                 checkpoint
             );

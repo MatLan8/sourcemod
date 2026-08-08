@@ -4,6 +4,7 @@
 #include "Trigger/globals.inc"
 #include "Trigger/core.inc"
 #include "Trigger/file.inc"
+#include "Trigger/event.inc"
 
 public Plugin myinfo =
 {
@@ -23,6 +24,11 @@ public void OnPluginStart()
 
     PrintToServer(
         "[TriggerManager] Loaded."
+    );
+
+    g_OnTriggerConfigChanged = CreateGlobalForward(
+        "TriggerManager_OnConfigChanged",
+        ET_Ignore
     );
 }
 
@@ -326,4 +332,18 @@ public Action Command_Trigger(
     );
 
     return Plugin_Handled;
+}
+
+void FireConfigChanged()
+{
+    if (g_OnTriggerConfigChanged == null)
+    {
+        return;
+    }
+
+    Call_StartForward(
+        g_OnTriggerConfigChanged
+    );
+
+    Call_Finish();
 }

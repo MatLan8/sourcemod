@@ -1,21 +1,15 @@
-#if defined _courseruntime_triggerTouch_included
+#if defined _courseruntime_triggerEvents_included
     #endinput
 #endif
-#define _courseruntime_triggerTouch_included
+#define _courseruntime_triggerEvents_included
 
 #include <sdkhooks>
-
-
 
 public void OnTriggerStartTouch(
     int entity,
     int other
 )
 {
-    // --------------------------------------------------------
-    // Only players.
-    // --------------------------------------------------------
-
     if (other < 1 || other > MaxClients)
     {
         return;
@@ -30,28 +24,13 @@ public void OnTriggerStartTouch(
     // No current trigger.
     // --------------------------------------------------------
 
-    if (g_CurrentTriggerIndex < 0 ||
-        g_CurrentTriggerIndex >= g_Triggers.Length)
+    if (g_CurrentTrigger.entity < 0)
     {
         return;
     }
 
-    // --------------------------------------------------------
-    // Get current trigger.
-    // --------------------------------------------------------
 
-    TriggerData currentTrigger;
-
-    g_Triggers.GetArray(
-        g_CurrentTriggerIndex,
-        currentTrigger
-    );
-
-    // --------------------------------------------------------
-    // Ignore all triggers except current trigger.
-    // --------------------------------------------------------
-
-    if (entity != currentTrigger.entity)
+    if (entity != g_CurrentTrigger.entity)
     {
         return;
     }
@@ -63,13 +42,13 @@ public void OnTriggerStartTouch(
     PrintToChat(
         other,
         "[Trigger] ENTER: %s",
-        currentTrigger.name
+        g_CurrentTrigger.name
     );
 
     PrintToServer(
         "[Trigger] Client %d ENTERED \"%s\" (entity %d)",
         other,
-        currentTrigger.name,
+        g_CurrentTrigger.name,
         entity
     );
 }
@@ -84,10 +63,6 @@ public void OnTriggerEndTouch(
     int other
 )
 {
-    // --------------------------------------------------------
-    // Only players.
-    // --------------------------------------------------------
-
     if (other < 1 || other > MaxClients)
     {
         return;
@@ -102,28 +77,13 @@ public void OnTriggerEndTouch(
     // No current trigger.
     // --------------------------------------------------------
 
-    if (g_CurrentTriggerIndex < 0 ||
-        g_CurrentTriggerIndex >= g_Triggers.Length)
+    if (g_CurrentTrigger.entity < 0)
     {
         return;
     }
 
-    // --------------------------------------------------------
-    // Get current trigger.
-    // --------------------------------------------------------
 
-    TriggerData currentTrigger;
-
-    g_Triggers.GetArray(
-        g_CurrentTriggerIndex,
-        currentTrigger
-    );
-
-    // --------------------------------------------------------
-    // Ignore all triggers except current trigger.
-    // --------------------------------------------------------
-
-    if (entity != currentTrigger.entity)
+    if (entity != g_CurrentTrigger.entity)
     {
         return;
     }
@@ -135,13 +95,13 @@ public void OnTriggerEndTouch(
     PrintToChat(
         other,
         "[Trigger] EXIT: %s",
-        currentTrigger.name
+        g_CurrentTrigger.name
     );
 
     PrintToServer(
         "[Trigger] Client %d EXITED \"%s\" (entity %d)",
         other,
-        currentTrigger.name,
+        g_CurrentTrigger.name,
         entity
     );
 }
