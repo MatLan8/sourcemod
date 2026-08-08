@@ -7,6 +7,19 @@
 #define MAX_NAME_LENGTH 128
 #define DEFAULT_COURSE_NAME "_Default_"
 
+enum struct TriggerCfgData
+{
+    char name[128];
+
+    float worldMins[3];
+    float worldMaxs[3];
+
+    float origin[3];
+
+    float localMins[3];
+    float localMaxs[3];
+}
+
 enum struct CheckpointData
 {
     char name[128];
