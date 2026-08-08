@@ -84,6 +84,21 @@ public Action Command_Trigger(
             "  sm_trigger delete <course> <number>"
         );
 
+        ReplyToCommand(
+            client,
+            "  sm_trigger setCurrentCourse <course>"
+        );
+
+        ReplyToCommand(
+            client,
+            "  sm_trigger setCurrentNumber <number>"
+        );
+
+        ReplyToCommand(
+            client,
+            "  sm_trigger saveNextCourseTrigger"
+        );
+
         return Plugin_Handled;
     }
 
@@ -105,6 +120,48 @@ public Action Command_Trigger(
     if (StrEqual(command, "reset", false))
     {
         Reset(client);
+
+        return Plugin_Handled;
+    }
+
+    if (StrEqual(command, "setCurrentCourse", false))
+    {
+        if (args == 2)
+        {
+            char courseName[128];
+            GetCmdArg(
+                2,
+                courseName,
+                sizeof(courseName)
+            );
+            SetCurrentCourse(client, courseName);
+
+            return Plugin_Handled;
+        }
+        return Plugin_Handled;
+    }
+
+    if (StrEqual(command, "setCurrentNumber", false))
+    {
+        if (args == 2)
+        {
+            char buffer[32];
+            GetCmdArg(
+                2,
+                buffer,
+                sizeof(buffer)
+            );
+            int triggerNumber = StringToInt(buffer);
+            SetCurrentNumber(client, triggerNumber);
+
+            return Plugin_Handled;
+        }
+        return Plugin_Handled;
+    }
+
+    if (StrEqual(command, "saveNextCourseTrigger", false))
+    {
+        SaveNextCourseTrigger(client);
 
         return Plugin_Handled;
     }

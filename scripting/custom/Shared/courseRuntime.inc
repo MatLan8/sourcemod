@@ -9,3 +9,7 @@ forward void CourseRuntime_OnCourseDataUpdated();
 native ArrayList CourseRuntime_GetCurrentCourseCheckpoints();
 
 native ArrayList CourseRuntime_GetCurrentCourseTriggers();
+
+native ArrayList CourseRuntime_GetAllCoursesCheckpoints();
+
+native ArrayList CourseRuntime_GetCourseCheckpoints(int courseIndex);

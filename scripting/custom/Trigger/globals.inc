@@ -19,5 +19,8 @@ enum struct TriggerData
     float localMaxs[3];
 }
 
+char currentCourse[128];
+int currentNumber = -1;
+
 // forwards
 Handle g_OnTriggerConfigChanged;

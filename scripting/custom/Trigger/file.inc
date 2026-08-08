@@ -912,3 +912,39 @@ void Update(
 
     delete kv;
 }
+
+void SaveNextCourseTrigger(int client)
+{
+    if (client <= 0 || !IsClientInGame(client))
+    {
+        return;
+    }
+
+    if (strlen(currentCourse) == 0)
+    {
+        ReplyToCommand(
+            client,
+            "[Trigger] ERROR: No course is currently set. Use \"!trigger setcourse <name>\" to set a course."
+        );
+
+        return;
+    }
+
+    if (currentNumber < 0)
+    {
+        ReplyToCommand(
+            client,
+            "[Trigger] ERROR: No trigger number is currently set. Use \"!trigger setnumber <number>\" to set a trigger number."
+        );
+
+        return;
+    }
+
+    Save(
+        client,
+        currentCourse,
+        currentNumber
+    );
+
+    currentNumber++;
+}

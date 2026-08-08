@@ -73,3 +73,35 @@ void Reset(int client)
     );
 }
 
+void SetCurrentCourse(int client, const char[] course)
+{
+    if (client <= 0 || !IsClientInGame(client))
+    {
+        return;
+    }
+
+    strcopy(currentCourse, sizeof(currentCourse), course);
+
+    ReplyToCommand(
+        client,
+        "[Trigger] Current course set to: %s",
+        currentCourse
+    );
+}
+
+void SetCurrentNumber(int client, int number)
+{
+    if (client <= 0 || !IsClientInGame(client))
+    {
+        return;
+    }
+
+    currentNumber = number;
+
+    ReplyToCommand(
+        client,
+        "[Trigger] Current number set to: %d",
+        currentNumber
+    );
+}
+

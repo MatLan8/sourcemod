@@ -16,6 +16,16 @@ void RegisterNatives()
         "CourseRuntime_GetCurrentCourseTriggers",
         Native_GetCurrentCourseTriggers
     );
+
+    CreateNative(
+        "CourseRuntime_GetAllCoursesCheckpoints",
+        Native_GetAllCoursesCheckpoints
+    );
+
+    CreateNative(
+        "CourseRuntime_GetCourseCheckpoints",
+        Native_GetCourseCheckpoints
+    );
 }
 
 
@@ -84,4 +94,52 @@ any Native_GetCurrentCourseTriggers(
     }
 
     return course.triggers;
+}
+
+any Native_GetAllCoursesCheckpoints(
+    Handle plugin,
+    int numParams
+)
+{
+    if (g_AllCoursesCheckpoints == null)
+    {
+        return 0;
+    }
+
+    return g_AllCoursesCheckpoints;
+}
+
+any Native_GetCourseCheckpoints(
+    Handle plugin,
+    int numParams
+)
+{
+    if (g_AllCoursesCheckpoints == null)
+    {
+        return 0;
+    }
+
+    int courseIndex = GetNativeCell(1);
+
+    if (
+        courseIndex < 0 ||
+        courseIndex >= g_AllCoursesCheckpoints.Length
+    )
+    {
+        return 0;
+    }
+
+    CourseCheckpoints course;
+
+    g_AllCoursesCheckpoints.GetArray(
+        courseIndex,
+        course
+    );
+
+    if (course.checkpoints == null)
+    {
+        return 0;
+    }
+
+    return course.checkpoints;
 }
