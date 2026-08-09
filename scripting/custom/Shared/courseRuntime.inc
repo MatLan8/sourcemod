@@ -13,3 +13,5 @@ native ArrayList CourseRuntime_GetCurrentCourseTriggers();
 native ArrayList CourseRuntime_GetAllCoursesCheckpoints();
 
 native ArrayList CourseRuntime_GetCourseCheckpoints(int courseIndex);
+
+native ArrayList CourseRuntime_GetCourseNames();

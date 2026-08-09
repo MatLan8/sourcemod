@@ -30,6 +30,7 @@ public void OnMapStart()
     );
     LoadCheckpoints();
     LoadTriggers();
+    SetCourse();
 }
 
 public Action Command_CourseRuntime(

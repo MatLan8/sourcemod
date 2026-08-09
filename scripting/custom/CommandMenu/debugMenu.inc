@@ -14,6 +14,11 @@ void ShowDebugMenu(int client)
         "Draw Checkpoints"
     );
 
+    menu.AddItem(
+        "draw_triggers",
+        "Draw Triggers"
+    );
+
     menu.ExitBackButton = true;
 
     menu.Display(

@@ -14,3 +14,5 @@ enum struct CourseCheckpoints
     char courseName[128];
     ArrayList checkpoints;
 }
+
+ArrayList g_CourseNames;

@@ -5,8 +5,10 @@
 #include "CommandMenu/globals.inc"
 #include "CommandMenu/mainMenu.inc"
 #include "CommandMenu/debugMenu.inc"
-#include "CommandMenu/courseMenu.inc"
+#include "CommandMenu/checkpointCourseMenu.inc"
 #include "CommandMenu/checkpointMenu.inc"
+#include "CommandMenu/triggerMenu.inc"
+#include "CommandMenu/courseRuntimeMenu.inc"
 
 public Plugin myinfo =
 {
@@ -22,8 +24,9 @@ public void OnPluginStart()
         "sm_menu",
         Command_Menu
     );
-}
 
+    g_CourseNames = CourseRuntime_GetCourseNames();
+}
 
 public Action Command_Menu(
     int client,
@@ -38,4 +41,15 @@ public Action Command_Menu(
     ShowMainMenu(client);
 
     return Plugin_Handled;
+}
+
+public void CourseRuntime_OnCourseDataUpdated()
+{
+    if (g_CourseNames != null)
+    {
+        delete g_CourseNames;
+    }
+
+    g_CourseNames =
+        CourseRuntime_GetCourseNames();
 }

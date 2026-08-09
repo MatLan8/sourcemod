@@ -3,7 +3,7 @@
 #endif
 #define _command_courseMenu_included
 
-void ShowCourseMenu(int client)
+void ShowCheckpointCourseMenu(int client)
 {
     ArrayList courses =
         CourseRuntime_GetAllCoursesCheckpoints();
@@ -13,7 +13,7 @@ void ShowCourseMenu(int client)
         return;
     }
 
-    Menu menu = new Menu(MenuHandler_Course);
+    Menu menu = new Menu(MenuHandler_CheckpointCourse);
 
     menu.SetTitle(
         "Select Course"
@@ -50,7 +50,7 @@ void ShowCourseMenu(int client)
     );
 }
 
-public int MenuHandler_Course(
+public int MenuHandler_CheckpointCourse(
     Menu menu,
     MenuAction action,
     int client,

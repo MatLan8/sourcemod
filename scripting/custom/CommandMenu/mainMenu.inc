@@ -23,6 +23,11 @@ void ShowMainMenu(int client)
     );
 
     menu.AddItem(
+        "course_runtime",
+        "Course menu"
+    );
+
+    menu.AddItem(
         "checkpoints",
         "Checkpoints"
     );
@@ -82,17 +87,23 @@ public int MenuHandler_Main(
         return 0;
     }
 
-    if (StrEqual(info, "checkpoints"))
+    if (StrEqual(info, "course_runtime"))
     {
-        ShowCourseMenu(client);
+        ShowCourseRuntimeMenu(client);
         return 0;
     }
 
-    // if (StrEqual(info, "triggers"))
-    // {
-    //     ShowTriggerMenu(client);
-    //     return 0;
-    // }
+    if (StrEqual(info, "checkpoints"))
+    {
+        ShowCheckpointCourseMenu(client);
+        return 0;
+    }
+
+    if (StrEqual(info, "triggers"))
+    {
+        ShowTriggerMenu(client);
+        return 0;
+    }
 
     return 0;
 }

@@ -26,6 +26,12 @@ void RegisterNatives()
         "CourseRuntime_GetCourseCheckpoints",
         Native_GetCourseCheckpoints
     );
+
+    CreateNative(
+        "CourseRuntime_GetCourseNames",
+        Native_GetCourseNames
+    );
+
 }
 
 
@@ -142,4 +148,33 @@ any Native_GetCourseCheckpoints(
     }
 
     return course.checkpoints;
+}
+
+any Native_GetCourseNames(
+    Handle plugin,
+    int numParams
+)
+{
+    ArrayList courseNames = new ArrayList(128);
+
+    if (g_AllCoursesCheckpoints == null)
+    {
+        return courseNames;
+    }
+
+    for (int i = 0; i < g_AllCoursesCheckpoints.Length; i++)
+    {
+        CourseCheckpoints course;
+
+        g_AllCoursesCheckpoints.GetArray(
+            i,
+            course
+        );
+
+        courseNames.PushString(
+            course.courseName
+        );
+    }
+
+    return courseNames;
 }

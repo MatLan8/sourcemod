@@ -70,7 +70,7 @@ public int MenuHandler_Checkpoint(
         item == MenuCancel_ExitBack
     )
     {
-        ShowMainMenu(client);
+        ShowCheckpointCourseMenu(client);
         return 0;
     }
 

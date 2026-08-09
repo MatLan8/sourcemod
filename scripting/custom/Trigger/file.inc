@@ -924,7 +924,7 @@ void SaveNextCourseTrigger(int client)
     {
         ReplyToCommand(
             client,
-            "[Trigger] ERROR: No course is currently set. Use \"!trigger setcourse <name>\" to set a course."
+            "[Trigger] ERROR: No course is currently set. Use \"!trigger setCurrentCourse <name>\" to set a course."
         );
 
         return;
@@ -934,7 +934,7 @@ void SaveNextCourseTrigger(int client)
     {
         ReplyToCommand(
             client,
-            "[Trigger] ERROR: No trigger number is currently set. Use \"!trigger setnumber <number>\" to set a trigger number."
+            "[Trigger] ERROR: No trigger number is currently set. Use \"!trigger setCurrentNumber <number>\" to set a trigger number."
         );
 
         return;
