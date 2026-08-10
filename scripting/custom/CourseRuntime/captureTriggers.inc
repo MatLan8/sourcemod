@@ -114,6 +114,13 @@ public Action OnCaptureTriggerStartTouch(
     int other
 )
 {
+    PrintToServer(
+        "[CAPTURE] Entered entity=%d other=%d",
+        entity,
+        other,
+        g_CurrentTrigger.entity
+    );
+
     if (entity != g_CurrentCaptureTrigger.entity)
     {
         return Plugin_Continue;

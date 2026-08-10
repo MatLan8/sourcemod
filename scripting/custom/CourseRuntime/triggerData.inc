@@ -1048,7 +1048,7 @@ int CreateRuntimeTrigger(
         entity,
         Prop_Send,
         "m_usSolidFlags",
-        8
+        152
     );
 
     // --------------------------------------------------------
@@ -1059,7 +1059,7 @@ int CreateRuntimeTrigger(
         entity,
         Prop_Send,
         "m_CollisionGroup",
-        1
+        11
     );
 
     // --------------------------------------------------------
@@ -1090,6 +1090,8 @@ int CreateRuntimeTrigger(
     // --------------------------------------------------------
     // Hook touches.
     // --------------------------------------------------------
+
+    EntityCollisionRulesChanged(entity);
 
     SDKHook(
         entity,

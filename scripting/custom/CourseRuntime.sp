@@ -23,6 +23,8 @@ public APLRes AskPluginLoad2(
 
     RegisterNatives();
 
+    
+
     return APLRes_Success;
 }
 
@@ -35,6 +37,8 @@ public void OnPluginStart()
         "sm_courseRuntime",
         Command_CourseRuntime
     );
+
+    HookEvent("teamplay_round_start", Event_OnRoundStart, EventHookMode_PostNoCopy);
 }
 
 public void OnMapStart()
@@ -51,6 +55,144 @@ public void OnMapStart()
 
     FireCourseDataUpdated();
 }
+
+public void Event_OnRoundStart(Event event, const char[] name, bool dontBroadcast)
+{
+    PrecacheModel(
+        TRIGGER_MODEL,
+        true
+    );
+    ClearCourseRuntimeData();
+
+    LoadCheckpoints();
+    LoadTriggers();
+    SetCourse();
+
+    FireCourseDataUpdated();
+}
+
+
+void DebugListRjaiEntities()
+{
+    PrintToServer("========================================");
+    PrintToServer("[Trigger DEBUG] Searching for rjai entities...");
+    PrintToServer("========================================");
+
+    int count = 0;
+
+    int entity = -1;
+
+    while ((entity = FindEntityByClassname(
+        entity,
+        "trigger_multiple"
+    )) != -1)
+    {
+        if (!IsValidEntity(entity))
+        {
+            continue;
+        }
+
+        char targetname[128];
+
+        GetEntPropString(
+            entity,
+            Prop_Data,
+            "m_iName",
+            targetname,
+            sizeof(targetname)
+        );
+
+        // Only show our runtime triggers.
+        if (StrContains(
+                targetname,
+                "rjai",
+                false
+            ) == -1)
+        {
+            continue;
+        }
+
+        float origin[3];
+        float mins[3];
+        float maxs[3];
+
+        GetEntPropVector(
+            entity,
+            Prop_Data,
+            "m_vecOrigin",
+            origin
+        );
+
+        GetEntPropVector(
+            entity,
+            Prop_Send,
+            "m_vecMins",
+            mins
+        );
+
+        GetEntPropVector(
+            entity,
+            Prop_Send,
+            "m_vecMaxs",
+            maxs
+        );
+
+        int solid = GetEntProp(
+            entity,
+            Prop_Send,
+            "m_nSolidType"
+        );
+
+        int flags = GetEntProp(
+            entity,
+            Prop_Send,
+            "m_usSolidFlags"
+        );
+
+        int collision = GetEntProp(
+            entity,
+            Prop_Send,
+            "m_CollisionGroup"
+        );
+
+        PrintToServer(
+            "[Trigger DEBUG] entity=%d name=\"%s\" origin=(%.1f %.1f %.1f)",
+            entity,
+            targetname,
+            origin[0],
+            origin[1],
+            origin[2]
+        );
+
+        PrintToServer(
+            "[Trigger DEBUG]    mins=(%.1f %.1f %.1f) maxs=(%.1f %.1f %.1f)",
+            mins[0],
+            mins[1],
+            mins[2],
+            maxs[0],
+            maxs[1],
+            maxs[2]
+        );
+
+        PrintToServer(
+            "[Trigger DEBUG]    solid=%d flags=%d collision=%d",
+            solid,
+            flags,
+            collision
+        );
+
+        count++;
+    }
+
+    PrintToServer(
+        "[Trigger DEBUG] Found %d rjai trigger_multiple entities.",
+        count
+    );
+
+    PrintToServer("========================================");
+}
+
+
 
 public Action Command_CourseRuntime(
     int client,
@@ -96,6 +238,12 @@ public Action Command_CourseRuntime(
     {
         LoadCheckpoints();
         FireCourseDataUpdated();
+        return Plugin_Handled;
+    }
+
+    else if (StrEqual(command, "debug", false))
+    {
+        DebugListRjaiEntities();
         return Plugin_Handled;
     }
     
