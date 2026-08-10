@@ -275,9 +275,6 @@ bool SetCourse(
     // Notify consumers.
     // ========================================================
 
-    FireCourseDataUpdated();
-
-
     return true;
 }
 

@@ -282,7 +282,6 @@ bool LoadCheckpoints()
         g_AllCoursesCheckpoints.Length
     );
 
-    FireCourseDataUpdated();
     return true;
 }
 

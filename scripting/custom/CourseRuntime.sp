@@ -26,6 +26,7 @@ public APLRes AskPluginLoad2(
     return APLRes_Success;
 }
 
+
 public void OnPluginStart()
 {
     RegisterForwards();
@@ -47,6 +48,8 @@ public void OnMapStart()
     LoadCheckpoints();
     LoadTriggers();
     SetCourse();
+
+    FireCourseDataUpdated();
 }
 
 public Action Command_CourseRuntime(
@@ -92,12 +95,14 @@ public Action Command_CourseRuntime(
     if (StrEqual(command, "loadCheckpoints", false))
     {
         LoadCheckpoints();
+        FireCourseDataUpdated();
         return Plugin_Handled;
     }
     
     else if (StrEqual(command, "loadTriggers", false))
     {
         LoadTriggers();
+        FireCourseDataUpdated();
         return Plugin_Handled;
     }
     else if (StrEqual(command, "setCourse", false))
@@ -105,6 +110,7 @@ public Action Command_CourseRuntime(
         if (args == 1)
         {
             SetCourse(client);
+            FireCourseDataUpdated();
             return Plugin_Handled;
         }
         if (args == 2)
@@ -133,7 +139,7 @@ public Action Command_CourseRuntime(
                     -1
                 );
             }
-
+            FireCourseDataUpdated();
             return Plugin_Handled;
         }
 
@@ -157,6 +163,7 @@ public Action Command_CourseRuntime(
             courseName,
             StringToInt(indexString)
         );
+        FireCourseDataUpdated();
 
         return Plugin_Handled;
     }
@@ -183,11 +190,13 @@ void RegisterForwards()
 public void CheckpointManager_OnConfigChanged()
 {
     LoadCheckpoints();
+    FireCourseDataUpdated();
 }
 
 public void TriggerManager_OnConfigChanged()
 {
     LoadTriggers();
+    FireCourseDataUpdated();
 }
 
 void ClearCourseRuntimeData()

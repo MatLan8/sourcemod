@@ -345,7 +345,6 @@ bool LoadTriggers()
         g_AllCoursesTriggers.Length
     );
 
-    FireCourseDataUpdated();
     return true;
 }
 

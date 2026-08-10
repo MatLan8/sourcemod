@@ -10,6 +10,13 @@ public void OnTriggerStartTouch(
     int other
 )
 {
+    PrintToServer(
+        "[Trigger DEBUG] StartTouch entity=%d other=%d current=%d",
+        entity,
+        other,
+        g_CurrentTrigger.entity
+    );
+
     if (other < 1 || other > MaxClients)
     {
         return;
@@ -63,6 +70,12 @@ public void OnTriggerEndTouch(
     int other
 )
 {
+    PrintToServer(
+        "[Trigger DEBUG] EndTouch entity=%d other=%d current=%d",
+        entity,
+        other,
+        g_CurrentTrigger.entity
+    );
     if (other < 1 || other > MaxClients)
     {
         return;
