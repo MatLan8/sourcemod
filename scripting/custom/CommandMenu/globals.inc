@@ -16,3 +16,4 @@ enum struct CourseCheckpoints
 }
 
 ArrayList g_CourseNames;
+ArrayList g_AllCoursesCheckpoints;

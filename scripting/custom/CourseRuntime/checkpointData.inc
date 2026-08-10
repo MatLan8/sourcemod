@@ -352,6 +352,19 @@ void LoadCheckpointList(
 
 
     kv.GoBack();
+    if (checkpoints.Length > 0)
+    {
+        CheckpointData finalCheckpoint;
+
+        checkpoints.GetArray(
+            checkpoints.Length - 1,
+            finalCheckpoint
+        );
+
+        HandleCaptureTrigger(
+            finalCheckpoint.name
+        );
+    }
 }
 
 

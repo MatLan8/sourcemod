@@ -4,6 +4,18 @@
 
 #define _shared_courseRuntime_included
 
+public SharedPlugin __pl_courseruntime =
+{
+    name = "CourseRuntime",
+    file = "CourseRuntime.smx",
+
+#if defined REQUIRE_PLUGIN
+    required = 1,
+#else
+    required = 0,
+#endif
+};
+
 forward void CourseRuntime_OnCourseDataUpdated();
 
 native ArrayList CourseRuntime_GetCurrentCourseCheckpoints();

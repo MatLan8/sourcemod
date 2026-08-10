@@ -9,10 +9,25 @@
 #include "CourseRuntime/course.inc"
 #include "Trigger/event.inc"
 #include "Checkpoint/event.inc"
+#include "CourseRuntime/captureTriggers.inc"
+
+
+public APLRes AskPluginLoad2(
+    Handle myself,
+    bool late,
+    char[] error,
+    int err_max
+)
+{
+    RegPluginLibrary("CourseRuntime");
+
+    RegisterNatives();
+
+    return APLRes_Success;
+}
 
 public void OnPluginStart()
 {
-    RegisterNatives();
     RegisterForwards();
 
     RegConsoleCmd(
@@ -21,13 +36,14 @@ public void OnPluginStart()
     );
 }
 
-
 public void OnMapStart()
 {
     PrecacheModel(
         TRIGGER_MODEL,
         true
     );
+    ClearCourseRuntimeData();
+
     LoadCheckpoints();
     LoadTriggers();
     SetCourse();
@@ -174,3 +190,57 @@ public void TriggerManager_OnConfigChanged()
     LoadTriggers();
 }
 
+void ClearCourseRuntimeData()
+{
+    if (g_AllCoursesCheckpoints != null)
+    {
+        for (int i = 0; i < g_AllCoursesCheckpoints.Length; i++)
+        {
+            CourseCheckpoints course;
+
+            g_AllCoursesCheckpoints.GetArray(
+                i,
+                course
+            );
+
+            if (course.checkpoints != null)
+            {
+                delete course.checkpoints;
+            }
+        }
+
+        delete g_AllCoursesCheckpoints;
+        g_AllCoursesCheckpoints = null;
+    }
+
+    if (g_AllCoursesTriggers != null)
+    {
+        for (int i = 0; i < g_AllCoursesTriggers.Length; i++)
+        {
+            CourseTriggers course;
+
+            g_AllCoursesTriggers.GetArray(
+                i,
+                course
+            );
+
+            if (course.triggers != null)
+            {
+                delete course.triggers;
+            }
+        }
+
+        delete g_AllCoursesTriggers;
+        g_AllCoursesTriggers = null;
+    }
+
+    if (g_CaptureTriggers != null)
+    {
+        delete g_CaptureTriggers;
+        g_CaptureTriggers = null;
+    }
+
+    g_CurrentCourseIndex = -1;
+    g_CurrentCheckpointIndex = -1;
+    g_CurrentTriggerIndex = -1;
+}

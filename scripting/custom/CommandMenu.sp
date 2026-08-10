@@ -24,8 +24,6 @@ public void OnPluginStart()
         "sm_menu",
         Command_Menu
     );
-
-    g_CourseNames = CourseRuntime_GetCourseNames();
 }
 
 public Action Command_Menu(
@@ -49,7 +47,6 @@ public void CourseRuntime_OnCourseDataUpdated()
     {
         delete g_CourseNames;
     }
-
-    g_CourseNames =
-        CourseRuntime_GetCourseNames();
+    g_AllCoursesCheckpoints = CourseRuntime_GetAllCoursesCheckpoints()
+    g_CourseNames = CourseRuntime_GetCourseNames();
 }

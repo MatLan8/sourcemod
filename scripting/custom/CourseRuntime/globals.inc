@@ -58,5 +58,15 @@ int g_CurrentTriggerIndex = -1;
 CheckpointData g_CurrentCheckpoint;
 TriggerData g_CurrentTrigger;
 
+enum struct CaptureTriggerData
+{
+    char name[128];
+    int entity;
+}
+
+ArrayList g_CaptureTriggers;
+
+CaptureTriggerData g_CurrentCaptureTrigger;
+
 // forwards
 Handle g_OnCourseDataUpdated;

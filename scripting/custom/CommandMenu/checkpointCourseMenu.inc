@@ -5,10 +5,7 @@
 
 void ShowCheckpointCourseMenu(int client)
 {
-    ArrayList courses =
-        CourseRuntime_GetAllCoursesCheckpoints();
-
-    if (courses == null)
+    if (g_AllCoursesCheckpoints == null)
     {
         return;
     }
@@ -19,11 +16,11 @@ void ShowCheckpointCourseMenu(int client)
         "Select Course"
     );
 
-    for (int i = 0; i < courses.Length; i++)
+    for (int i = 0; i < g_AllCoursesCheckpoints.Length; i++)
     {
         CourseCheckpoints course;
 
-        courses.GetArray(
+        g_AllCoursesCheckpoints.GetArray(
             i,
             course
         );
