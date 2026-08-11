@@ -10,13 +10,6 @@ public void OnTriggerStartTouch(
     int other
 )
 {
-    PrintToServer(
-        "[Trigger DEBUG] StartTouch entity=%d other=%d current=%d",
-        entity,
-        other,
-        g_CurrentTrigger.entity
-    );
-
     if (other < 1 || other > MaxClients)
     {
         return;
@@ -58,63 +51,6 @@ public void OnTriggerStartTouch(
         g_CurrentTrigger.name,
         entity
     );
-}
 
-
-// ============================================================
-// End Touch
-// ============================================================
-
-public void OnTriggerEndTouch(
-    int entity,
-    int other
-)
-{
-    PrintToServer(
-        "[Trigger DEBUG] EndTouch entity=%d other=%d current=%d",
-        entity,
-        other,
-        g_CurrentTrigger.entity
-    );
-    if (other < 1 || other > MaxClients)
-    {
-        return;
-    }
-
-    if (!IsClientInGame(other))
-    {
-        return;
-    }
-
-    // --------------------------------------------------------
-    // No current trigger.
-    // --------------------------------------------------------
-
-    if (g_CurrentTrigger.entity < 0)
-    {
-        return;
-    }
-
-
-    if (entity != g_CurrentTrigger.entity)
-    {
-        return;
-    }
-
-    // --------------------------------------------------------
-    // Current trigger exited.
-    // --------------------------------------------------------
-
-    PrintToChat(
-        other,
-        "[Trigger] EXIT: %s",
-        g_CurrentTrigger.name
-    );
-
-    PrintToServer(
-        "[Trigger] Client %d EXITED \"%s\" (entity %d)",
-        other,
-        g_CurrentTrigger.name,
-        entity
-    );
+    AdvanceCheckpoint();
 }

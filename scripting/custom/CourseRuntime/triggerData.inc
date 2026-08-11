@@ -1098,12 +1098,6 @@ int CreateRuntimeTrigger(
         SDKHook_StartTouch,
         OnTriggerStartTouch
     );
-
-    SDKHook(
-        entity,
-        SDKHook_EndTouch,
-        OnTriggerEndTouch
-    );
-
+    
     return entity;
 }

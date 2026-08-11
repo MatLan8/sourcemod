@@ -56,6 +56,7 @@ public void OnMapStart()
     FireCourseDataUpdated();
 }
 
+
 public void Event_OnRoundStart(Event event, const char[] name, bool dontBroadcast)
 {
     PrecacheModel(

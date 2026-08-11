@@ -45,7 +45,12 @@ public void CourseRuntime_OnCourseDataUpdated()
 {
     if (g_CourseNames != null)
     {
-        delete g_CourseNames;
+        if (IsValidHandle(g_CourseNames))
+        {
+            delete g_CourseNames;
+        }
+
+        g_CourseNames = null;
     }
     g_AllCoursesCheckpoints = CourseRuntime_GetAllCoursesCheckpoints()
     g_CourseNames = CourseRuntime_GetCourseNames();
