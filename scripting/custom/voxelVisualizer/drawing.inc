@@ -25,95 +25,69 @@ void DrawVoxelVolume()
 
     if(g_DrawVoxelGrid)
     {
-       DrawVoxelCube(1,1,8);
-       DrawVoxelCube(1,2,8);
-       DrawVoxelCube(1,3,8);
+       DrawVoxelCube(15,15,15);
     }
 }
 
 
 
+void DrawOrientedBox(
+    float minX,
+    float minY,
+    float minZ,
+    float maxX,
+    float maxY,
+    float maxZ
+)
+{
+    float c000[3];
+    float c100[3];
+    float c110[3];
+    float c010[3];
+    float c001[3];
+    float c101[3];
+    float c111[3];
+    float c011[3];
+
+    LocalToWorld(minX, minY, minZ, c000);
+    LocalToWorld(maxX, minY, minZ, c100);
+    LocalToWorld(maxX, maxY, minZ, c110);
+    LocalToWorld(minX, maxY, minZ, c010);
+    LocalToWorld(minX, minY, maxZ, c001);
+    LocalToWorld(maxX, minY, maxZ, c101);
+    LocalToWorld(maxX, maxY, maxZ, c111);
+    LocalToWorld(minX, maxY, maxZ, c011);
+
+    DrawWorldLine(c000, c100);
+    DrawWorldLine(c100, c110);
+    DrawWorldLine(c110, c010);
+    DrawWorldLine(c010, c000);
+
+    DrawWorldLine(c001, c101);
+    DrawWorldLine(c101, c111);
+    DrawWorldLine(c111, c011);
+    DrawWorldLine(c011, c001);
+
+    DrawWorldLine(c000, c001);
+    DrawWorldLine(c100, c101);
+    DrawWorldLine(c110, c111);
+    DrawWorldLine(c010, c011);
+}
+
+
 void DrawOuterBox()
 {
-    float min[3];
-    float max[3];
+    float halfX = g_BoxSize[0] / 2.0;
+    float halfY = g_BoxSize[1] / 2.0;
+    float halfZ = g_BoxSize[2] / 2.0;
 
-
-    min[0] = g_CurrentVolumeOrigin[0];
-    min[1] = g_CurrentVolumeOrigin[1];
-    min[2] = g_CurrentVolumeOrigin[2];
-
-
-    max[0] = min[0] + g_BoxSize[0];
-    max[1] = min[1] + g_BoxSize[1];
-    max[2] = min[2] + g_BoxSize[2];
-
-    // bottom square
-
-    DrawLine(
-        min[0],min[1],min[2],
-        max[0],min[1],min[2]
-    );
-
-    DrawLine(
-        max[0],min[1],min[2],
-        max[0],max[1],min[2]
-    );
-
-    DrawLine(
-        max[0],max[1],min[2],
-        min[0],max[1],min[2]
-    );
-
-    DrawLine(
-        min[0],max[1],min[2],
-        min[0],min[1],min[2]
-    );
-
-
-    // top square
-
-    DrawLine(
-        min[0],min[1],max[2],
-        max[0],min[1],max[2]
-    );
-
-    DrawLine(
-        max[0],min[1],max[2],
-        max[0],max[1],max[2]
-    );
-
-    DrawLine(
-        max[0],max[1],max[2],
-        min[0],max[1],max[2]
-    );
-
-    DrawLine(
-        min[0],max[1],max[2],
-        min[0],min[1],max[2]
-    );
-
-
-    // vertical edges
-
-    DrawLine(
-        min[0],min[1],min[2],
-        min[0],min[1],max[2]
-    );
-
-    DrawLine(
-        max[0],min[1],min[2],
-        max[0],min[1],max[2]
-    );
-
-    DrawLine(
-        max[0],max[1],min[2],
-        max[0],max[1],max[2]
-    );
-
-    DrawLine(
-        min[0],max[1],min[2],
-        min[0],max[1],max[2]
+    DrawOrientedBox(
+        -halfX,
+        -halfY,
+        -halfZ,
+        halfX,
+        halfY,
+        halfZ
     );
 }
 
@@ -124,113 +98,40 @@ void DrawVoxelCube(
     int z
 )
 {
-    float min[3];
-    float max[3];
+    float halfX = g_BoxSize[0] / 2.0;
+    float halfY = g_BoxSize[1] / 2.0;
+    float halfZ = g_BoxSize[2] / 2.0;
 
+    float minX = -halfX + (x * g_VoxelSize);
+    float minY = -halfY + (y * g_VoxelSize);
+    float minZ = -halfZ + (z * g_VoxelSize);
 
-    min[0] =
-        g_CurrentVolumeOrigin[0]
-        + x * g_VoxelSize;
-
-
-    min[1] =
-        g_CurrentVolumeOrigin[1]
-        + y * g_VoxelSize;
-
-
-    min[2] =
-        g_CurrentVolumeOrigin[2]
-        + z * g_VoxelSize;
-
-
-
-    max[0] =
-        min[0]
-        + g_VoxelSize;
-
-
-    max[1] =
-        min[1]
-        + g_VoxelSize;
-
-
-    max[2] =
-        min[2]
-        + g_VoxelSize;
-
-
-
-    // bottom square
-
-    DrawLine(
-        min[0],min[1],min[2],
-        max[0],min[1],min[2]
-    );
-
-    DrawLine(
-        max[0],min[1],min[2],
-        max[0],max[1],min[2]
-    );
-
-    DrawLine(
-        max[0],max[1],min[2],
-        min[0],max[1],min[2]
-    );
-
-    DrawLine(
-        min[0],max[1],min[2],
-        min[0],min[1],min[2]
-    );
-
-
-
-    // top square
-
-    DrawLine(
-        min[0],min[1],max[2],
-        max[0],min[1],max[2]
-    );
-
-    DrawLine(
-        max[0],min[1],max[2],
-        max[0],max[1],max[2]
-    );
-
-    DrawLine(
-        max[0],max[1],max[2],
-        min[0],max[1],max[2]
-    );
-
-    DrawLine(
-        min[0],max[1],max[2],
-        min[0],min[1],max[2]
-    );
-
-
-
-    // vertical edges
-
-    DrawLine(
-        min[0],min[1],min[2],
-        min[0],min[1],max[2]
-    );
-
-    DrawLine(
-        max[0],min[1],min[2],
-        max[0],min[1],max[2]
-    );
-
-    DrawLine(
-        max[0],max[1],min[2],
-        max[0],max[1],max[2]
-    );
-
-    DrawLine(
-        min[0],max[1],min[2],
-        min[0],max[1],max[2]
+    DrawOrientedBox(
+        minX,
+        minY,
+        minZ,
+        minX + g_VoxelSize,
+        minY + g_VoxelSize,
+        minZ + g_VoxelSize
     );
 }
 
+
+
+void DrawWorldLine(
+    const float start[3],
+    const float end[3]
+)
+{
+    DrawLine(
+        start[0],
+        start[1],
+        start[2],
+        end[0],
+        end[1],
+        end[2]
+    );
+}
 
 
 void DrawLine(

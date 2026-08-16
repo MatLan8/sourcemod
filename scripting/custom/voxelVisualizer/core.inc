@@ -33,8 +33,12 @@ float g_VoxelSize = 16.0;
 int g_VoxelCount[3];
 
 
-// Player volume origin
-float g_CurrentVolumeOrigin[3];
+// Volume center (player origin + offset) and yaw basis.
+// Matches the extension: forward=(cos,sin,0), right=(sin,-cos,0), up=(0,0,1).
+float g_VolumeCenter[3];
+float g_VolumeRight[3];
+float g_VolumeForward[3];
+float g_VolumeUp[3];
 
 
 // Voxel positions
@@ -80,37 +84,62 @@ void RecalculateVoxelLayout()
 
 
 
+void LocalToWorld(
+    float localX,
+    float localY,
+    float localZ,
+    float world[3]
+)
+{
+    world[0] =
+        g_VolumeCenter[0]
+        + g_VolumeRight[0] * localX
+        + g_VolumeForward[0] * localY
+        + g_VolumeUp[0] * localZ;
+
+    world[1] =
+        g_VolumeCenter[1]
+        + g_VolumeRight[1] * localX
+        + g_VolumeForward[1] * localY
+        + g_VolumeUp[1] * localZ;
+
+    world[2] =
+        g_VolumeCenter[2]
+        + g_VolumeRight[2] * localX
+        + g_VolumeForward[2] * localY
+        + g_VolumeUp[2] * localZ;
+}
+
+
 void UpdateVoxelVolume(
     int client
 )
 {
     float playerOrigin[3];
+    float angles[3];
 
+    GetClientAbsOrigin(client, playerOrigin);
+    GetClientEyeAngles(client, angles);
 
-    GetClientAbsOrigin(
-        client,
-        playerOrigin
-    );
+    g_VolumeCenter[0] = playerOrigin[0] + g_BoxOffset[0];
+    g_VolumeCenter[1] = playerOrigin[1] + g_BoxOffset[1];
+    g_VolumeCenter[2] = playerOrigin[2] + g_BoxOffset[2];
 
+    float yaw = DegToRad(angles[1]);
+    float cy = Cosine(yaw);
+    float sy = Sine(yaw);
 
-    g_CurrentVolumeOrigin[0] =
-        playerOrigin[0]
-        - (g_BoxSize[0] / 2.0)
-        + g_BoxOffset[0];
+    g_VolumeForward[0] = cy;
+    g_VolumeForward[1] = sy;
+    g_VolumeForward[2] = 0.0;
 
+    g_VolumeRight[0] = sy;
+    g_VolumeRight[1] = -cy;
+    g_VolumeRight[2] = 0.0;
 
-    g_CurrentVolumeOrigin[1] =
-        playerOrigin[1]
-        - (g_BoxSize[1] / 2.0)
-        + g_BoxOffset[1];
-
-
-    g_CurrentVolumeOrigin[2] =
-        playerOrigin[2]
-        - (g_BoxSize[2] / 2.0)
-        + g_BoxOffset[2];
-
-
+    g_VolumeUp[0] = 0.0;
+    g_VolumeUp[1] = 0.0;
+    g_VolumeUp[2] = 1.0;
 
     CalculateVoxelPositions();
 }
@@ -133,22 +162,12 @@ void CalculateVoxelPositions()
                     return;
 
 
-                g_VoxelPositions[index][0] =
-                    g_CurrentVolumeOrigin[0]
-                    + (x * g_VoxelSize)
-                    + (g_VoxelSize / 2.0);
-
-
-                g_VoxelPositions[index][1] =
-                    g_CurrentVolumeOrigin[1]
-                    + (y * g_VoxelSize)
-                    + (g_VoxelSize / 2.0);
-
-
-                g_VoxelPositions[index][2] =
-                    g_CurrentVolumeOrigin[2]
-                    + (z * g_VoxelSize)
-                    + (g_VoxelSize / 2.0);
+                LocalToWorld(
+                    -(g_BoxSize[0] / 2.0) + (x * g_VoxelSize) + (g_VoxelSize / 2.0),
+                    -(g_BoxSize[1] / 2.0) + (y * g_VoxelSize) + (g_VoxelSize / 2.0),
+                    -(g_BoxSize[2] / 2.0) + (z * g_VoxelSize) + (g_VoxelSize / 2.0),
+                    g_VoxelPositions[index]
+                );
 
 
                 index++;
