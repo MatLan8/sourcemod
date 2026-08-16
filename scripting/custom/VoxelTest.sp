@@ -1,72 +1,88 @@
 #include <sourcemod>
+#include <sdktools>
 #include "MapData/voxel.inc"
+
+int g_VoxelFlags[VOXEL_COUNT];
 
 public void OnPluginStart()
 {
-    PrintToServer("[VOXEL TEST] Calling Voxel_GetBrushCount()");
+    RegConsoleCmd("sm_voxeltest", Command_VoxelTest);
+    PrintToServer("[VoxelTest] Loaded. Use sm_voxeltest in-game.");
+}
 
-    int index = Voxel_GetBrushCount(
-        -4096.0,
-        -4096.0,
-        -4096.0,
-        4096.0,
-        4096.0,
-        4096.0
-    );
-
-    PrintToServer(
-        "[VOXEL TEST] Found brush %d",
-        index
-    );
-
-    if (index <= 0)
+public Action Command_VoxelTest(int client, int args)
+{
+    if (client <= 0 || !IsClientInGame(client))
     {
-        return;
+        ReplyToCommand(client, "[VoxelTest] Must be used in-game.");
+        return Plugin_Handled;
     }
 
-    float planes[MAX_BRUSH_PLANES * 4];
-    int planeCount = 0;
-    int contents = 0;
+    float origin[3];
+    float angles[3];
 
-    PrintToServer(
-        "[VOXEL TEST] Calling Voxel_GetBrushInfo(%d)",
-        index
+    GetClientAbsOrigin(client, origin);
+    GetClientEyeAngles(client, angles);
+
+    bool success = Voxel_BuildCache(
+        origin,
+        angles,
+        g_VoxelFlags,
+        sizeof(g_VoxelFlags)
     );
 
-    bool success = Voxel_GetBrushInfo(
-        index,
-        planes,
-        MAX_BRUSH_PLANES,
-        planeCount,
-        contents
-    );
+    int occupied = 0;
+    int solid = 0;
+    int playerClip = 0;
+    int water = 0;
 
-    PrintToServer(
-        "[VOXEL TEST] Voxel_GetBrushInfo returned %d",
-        success
-    );
-
-    if (!success)
+    for (int i = 0; i < VOXEL_COUNT; i++)
     {
-        return;
+        int flags = g_VoxelFlags[i];
+
+        if (flags == 0)
+        {
+            continue;
+        }
+
+        occupied++;
+
+        if (flags & GEOM_SOLID)
+        {
+            solid++;
+        }
+
+        if (flags & GEOM_PLAYERCLIP)
+        {
+            playerClip++;
+        }
+
+        if (flags & GEOM_WATER)
+        {
+            water++;
+        }
     }
 
     PrintToServer(
-        "[VOXEL TEST] Brush %d: %d planes, contents=%d",
-        index,
-        planeCount,
-        contents
+        "[VoxelTest] success=%d occupied=%d/%d solid=%d clip=%d water=%d yaw=%.1f",
+        success,
+        occupied,
+        VOXEL_COUNT,
+        solid,
+        playerClip,
+        water,
+        angles[1]
     );
 
-    for (int i = 0; i < planeCount; i++)
-    {
-        PrintToServer(
-            "[VOXEL TEST] Plane %d: %.4f %.4f %.4f %.4f",
-            i,
-            planes[i * 4 + 0],
-            planes[i * 4 + 1],
-            planes[i * 4 + 2],
-            planes[i * 4 + 3]
-        );
-    }
+    PrintToChat(
+        client,
+        "[VoxelTest] occupied %d / %d (solid %d clip %d water %d)",
+        occupied,
+        VOXEL_COUNT,
+        solid,
+        playerClip,
+        water
+    );
+
+    return Plugin_Handled;
 }

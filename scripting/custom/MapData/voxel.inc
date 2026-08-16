@@ -4,6 +4,21 @@
 
 #define _voxel_included
 
+enum
+{
+    GEOM_SOLID      = (1 << 0),
+    GEOM_PLAYERCLIP = (1 << 1),
+    GEOM_WATER      = (1 << 2),
+    GEOM_NOGRENADES = (1 << 3),
+    GEOM_REGENERATE = (1 << 4),
+    GEOM_TELEPORT   = (1 << 5)
+};
+
+#define VOXEL_COUNT_X 16
+#define VOXEL_COUNT_Y 16
+#define VOXEL_COUNT_Z 16
+#define VOXEL_COUNT    (VOXEL_COUNT_X * VOXEL_COUNT_Y * VOXEL_COUNT_Z)
+
 native int Voxel_GetBrushCount(
     float minX,
     float minY,
@@ -25,4 +40,13 @@ native bool Voxel_GetBrushInfo(
     int maxPlanes,
     int &planeCount,
     int &contents
+);
+
+native bool Voxel_TestWriteArray(int[] array, int maxlength);
+
+native bool Voxel_BuildCache(
+    const float origin[3],
+    const float angles[3],
+    int[] flags,
+    int maxlength
 );
