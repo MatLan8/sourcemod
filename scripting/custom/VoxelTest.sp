@@ -4,11 +4,25 @@
 
 int g_VoxelFlags[VOXEL_COUNT];
 
+static void CacheStaticProps()
+{
+    int count = Voxel_CacheStaticProps();
+
+    PrintToServer("[VoxelTest] Cached %d static props", count);
+}
+
 public void OnPluginStart()
 {
     RegConsoleCmd("sm_voxeltest", Command_VoxelTest);
+    CacheStaticProps();
     PrintToServer("[VoxelTest] Loaded. Use sm_voxeltest in-game.");
 }
+
+public void OnMapStart()
+{
+    CacheStaticProps();
+}
+
 
 public Action Command_VoxelTest(int client, int args)
 {

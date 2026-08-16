@@ -50,3 +50,7 @@ native bool Voxel_BuildCache(
     int[] flags,
     int maxlength
 );
+
+// Cache solid prop_static collideables for the current map.
+// Call from OnMapStart and OnPluginStart (late load). Not needed on round start.
+native int Voxel_CacheStaticProps();
