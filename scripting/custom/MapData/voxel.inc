@@ -10,8 +10,7 @@ enum
     GEOM_PLAYERCLIP = (1 << 1),
     GEOM_WATER      = (1 << 2),
     GEOM_NOGRENADES = (1 << 3),
-    GEOM_REGENERATE = (1 << 4),
-    GEOM_TELEPORT   = (1 << 5)
+    GEOM_TELEPORT   = (1 << 4)
 };
 
 #define VOXEL_COUNT_X 16
@@ -56,7 +55,7 @@ native bool Voxel_BuildCache(
 // or round start (static props live in the BSP lump).
 native int Voxel_CacheStaticProps();
 
-// Cache func_nogrenades, func_regenerate, and trigger_teleport.
+// Cache func_nogrenades and trigger_teleport.
 // Call from OnMapStart and teamplay_round_start (edicts respawn).
 // Do not call from OnPluginStart — the map is not loaded yet.
 native int Voxel_CacheTriggers();

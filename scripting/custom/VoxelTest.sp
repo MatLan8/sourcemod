@@ -70,7 +70,6 @@ public Action Command_VoxelTest(int client, int args)
     int playerClip = 0;
     int water = 0;
     int noGrenades = 0;
-    int regenerate = 0;
     int teleport = 0;
 
     for (int i = 0; i < VOXEL_COUNT; i++)
@@ -104,11 +103,6 @@ public Action Command_VoxelTest(int client, int args)
             noGrenades++;
         }
 
-        if (flags & GEOM_REGENERATE)
-        {
-            regenerate++;
-        }
-
         if (flags & GEOM_TELEPORT)
         {
             teleport++;
@@ -116,7 +110,7 @@ public Action Command_VoxelTest(int client, int args)
     }
 
     PrintToServer(
-        "[VoxelTest] success=%d occupied=%d/%d solid=%d clip=%d water=%d nogrenades=%d regen=%d teleport=%d yaw=%.1f",
+        "[VoxelTest] success=%d occupied=%d/%d solid=%d clip=%d water=%d nogrenades=%d teleport=%d yaw=%.1f",
         success,
         occupied,
         VOXEL_COUNT,
@@ -124,21 +118,19 @@ public Action Command_VoxelTest(int client, int args)
         playerClip,
         water,
         noGrenades,
-        regenerate,
         teleport,
         angles[1]
     );
 
     PrintToChat(
         client,
-        "[VoxelTest] occupied %d / %d (solid %d clip %d water %d ng %d regen %d tp %d)",
+        "[VoxelTest] occupied %d / %d (solid %d clip %d water %d ng %d tp %d)",
         occupied,
         VOXEL_COUNT,
         solid,
         playerClip,
         water,
         noGrenades,
-        regenerate,
         teleport
     );
 
