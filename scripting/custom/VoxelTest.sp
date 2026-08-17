@@ -11,18 +11,38 @@ static void CacheStaticProps()
     PrintToServer("[VoxelTest] Cached %d static props", count);
 }
 
+static void CacheTriggers()
+{
+    int count = Voxel_CacheTriggers();
+
+    PrintToServer("[VoxelTest] Cached %d triggers", count);
+}
+
+static void CacheMapGeometry()
+{
+    CacheStaticProps();
+    CacheTriggers();
+}
+
 public void OnPluginStart()
 {
     RegConsoleCmd("sm_voxeltest", Command_VoxelTest);
-    CacheStaticProps();
+    HookEvent("teamplay_round_start", Event_OnRoundStart, EventHookMode_PostNoCopy);
     PrintToServer("[VoxelTest] Loaded. Use sm_voxeltest in-game.");
+    // Map geometry is cached in OnMapStart. The map is not loaded here.
 }
+
+
 
 public void OnMapStart()
 {
-    CacheStaticProps();
+    CacheMapGeometry();
 }
 
+public void Event_OnRoundStart(Event event, const char[] name, bool dontBroadcast)
+{
+    CacheTriggers();
+}
 
 public Action Command_VoxelTest(int client, int args)
 {
@@ -49,6 +69,9 @@ public Action Command_VoxelTest(int client, int args)
     int solid = 0;
     int playerClip = 0;
     int water = 0;
+    int noGrenades = 0;
+    int regenerate = 0;
+    int teleport = 0;
 
     for (int i = 0; i < VOXEL_COUNT; i++)
     {
@@ -75,27 +98,48 @@ public Action Command_VoxelTest(int client, int args)
         {
             water++;
         }
+
+        if (flags & GEOM_NOGRENADES)
+        {
+            noGrenades++;
+        }
+
+        if (flags & GEOM_REGENERATE)
+        {
+            regenerate++;
+        }
+
+        if (flags & GEOM_TELEPORT)
+        {
+            teleport++;
+        }
     }
 
     PrintToServer(
-        "[VoxelTest] success=%d occupied=%d/%d solid=%d clip=%d water=%d yaw=%.1f",
+        "[VoxelTest] success=%d occupied=%d/%d solid=%d clip=%d water=%d nogrenades=%d regen=%d teleport=%d yaw=%.1f",
         success,
         occupied,
         VOXEL_COUNT,
         solid,
         playerClip,
         water,
+        noGrenades,
+        regenerate,
+        teleport,
         angles[1]
     );
 
     PrintToChat(
         client,
-        "[VoxelTest] occupied %d / %d (solid %d clip %d water %d)",
+        "[VoxelTest] occupied %d / %d (solid %d clip %d water %d ng %d regen %d tp %d)",
         occupied,
         VOXEL_COUNT,
         solid,
         playerClip,
-        water
+        water,
+        noGrenades,
+        regenerate,
+        teleport
     );
 
     return Plugin_Handled;

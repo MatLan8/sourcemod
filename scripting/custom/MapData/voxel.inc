@@ -52,5 +52,11 @@ native bool Voxel_BuildCache(
 );
 
 // Cache solid prop_static collideables for the current map.
-// Call from OnMapStart and OnPluginStart (late load). Not needed on round start.
+// Call from OnMapStart only. Not needed on plugin start (map is not loaded yet)
+// or round start (static props live in the BSP lump).
 native int Voxel_CacheStaticProps();
+
+// Cache func_nogrenades, func_regenerate, and trigger_teleport.
+// Call from OnMapStart and teamplay_round_start (edicts respawn).
+// Do not call from OnPluginStart — the map is not loaded yet.
+native int Voxel_CacheTriggers();
