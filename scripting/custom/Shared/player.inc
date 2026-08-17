@@ -11,6 +11,7 @@ void GatherPlayerSnapshot(int client, PlayerSnapshot player)
 
     player.grounded = IsPlayerGrounded(client);
     player.waterLevel = GetEntProp(client, Prop_Send, "m_nWaterLevel");
+    player.regenerate = GetPlayerRegenerate(client);
     player.ammo = 0;
     int weapon = GetEntPropEnt(client, Prop_Send, "m_hActiveWeapon");
 
@@ -38,12 +39,23 @@ bool IsPlayerGrounded(int client)
     return (GetEntityFlags(client) & FL_ONGROUND) != 0;
 }
 
+int GetPlayerRegenerate(int client)
+{
+    if (client <= 0 || client > MaxClients)
+    {
+        return 0;
+    }
+
+    return g_RegenTouchCount[client] > 0 ? 1 : 0;
+}
+
 void ResetPlayerRecordingState(int client)
 {
     if (client > 0)
     {
         g_RocketFired[client] = false;
         g_PlayerButtons[client] = 0;
+        g_RegenTouchCount[client] = 0;
     }
 }
 

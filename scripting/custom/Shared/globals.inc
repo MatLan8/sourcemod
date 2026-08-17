@@ -7,12 +7,14 @@
 #define MAP_CONFIG_PATH "data/MapConfigs"
 bool g_RocketFired[MAXPLAYERS + 1];
 int g_PlayerButtons[MAXPLAYERS + 1];
+int g_RegenTouchCount[MAXPLAYERS + 1];
 
 enum struct PlayerSnapshot
 {
     float position[3];
     float velocity[3];
     float viewAngles[3];
+    int regenerate;
     int grounded;
     int waterLevel;
     int ammo;
