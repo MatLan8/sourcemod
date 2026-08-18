@@ -50,3 +50,6 @@ RocketSlot g_RocketSlots[MAX_ROCKET_SLOTS];
 int g_NextRocketID = 1;
 
 CheckpointData g_CurrentCheckpoint;
+
+int g_VoxelFlags[VOXEL_COUNT];
+RayData g_Rays[RAY_COUNT];

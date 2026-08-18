@@ -2,7 +2,7 @@
 #include <sdktools>
 #include <profiler>
 
-#include "Shared/mapdata.inc"
+#include "Shared/mapDataNatives.inc"
 #include "MapDataDebug/globals.inc"
 #include "MapDataDebug/voxels.inc"
 #include "MapDataDebug/raycasts.inc"

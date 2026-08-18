@@ -7,7 +7,7 @@
 
 ArrayList g_RegenTriggers;
 
-void CacheRegenerateTriggers()
+int CacheRegenerateTriggers()
 {
     UnhookRegenerateTriggers();
     ResetAllRegenTouchCounts();
@@ -41,10 +41,7 @@ void CacheRegenerateTriggers()
         count++;
     }
 
-    PrintToServer(
-        "[Regenerate] Cached %d func_regenerate triggers",
-        count
-    );
+    return count;
 }
 
 void UnhookRegenerateTriggers()

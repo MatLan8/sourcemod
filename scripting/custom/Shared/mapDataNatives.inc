@@ -1,8 +1,8 @@
-#if defined _mapdata_included
+#if defined _mapDataNatives_included
     #endinput
 #endif
 
-#define _mapdata_included
+#define _mapDataNatives_included
 
 enum
 {
@@ -33,13 +33,6 @@ enum struct RayData
     float teleportDistance;
 }
 
-native bool MapData_BuildVoxels(
-    const float origin[3],
-    const float angles[3],
-    int[] flags,
-    int maxlength
-);
-
 // Cache solid prop_static collideables for the current map.
 // Call from OnMapStart only. Not needed on plugin start (map is not loaded yet)
 // or round start (static props live in the BSP lump).
@@ -49,6 +42,13 @@ native int MapData_CacheStaticProps();
 // Call from OnMapStart and teamplay_round_start (edicts respawn).
 // Do not call from OnPluginStart — the map is not loaded yet.
 native int MapData_CacheTriggers();
+
+native bool MapData_BuildVoxels(
+    const float origin[3],
+    const float angles[3],
+    int[] flags,
+    int maxlength
+);
 
 native bool MapData_TraceRays(
     const float origin[3],

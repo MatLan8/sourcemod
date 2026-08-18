@@ -7,7 +7,9 @@ Handle g_RecordingFile = INVALID_HANDLE;
 int g_RecordRowNumber = 0;
 
 #include "Shared/courseRuntime.inc"
+#include "Shared/mapDataNatives.inc"
 #include "Shared/globals.inc"
+#include "Shared/map.inc"
 #include "Shared/input.inc"
 #include "Shared/player.inc"
 #include "Shared/regenerateTriggers.inc"
@@ -36,15 +38,34 @@ public void OnPluginStart()
 
 public void OnMapStart()
 {
-    CacheRegenerateTriggers();
-    SyncRecorderCheckpoint();
+    int propCount = MapData_CacheStaticProps();
+
+    PrintToServer(
+        "[Recorder] Cached %d static props",
+        propCount
+    );
+
+    MapSync();
 }
 
 public void Event_OnRoundStart(Event event, const char[] name, bool dontBroadcast)
 {
-    CacheRegenerateTriggers();
-    SyncRecorderCheckpoint();
+    MapSync();
 }
+
+public void MapSync() {
+    int regenCount = CacheRegenerateTriggers();
+    int triggerCount = MapData_CacheTriggers();
+
+    SyncRecorderCheckpoint();
+
+    PrintToServer(
+        "[MapDataDebug] Cached %d triggers, %d regenerate triggers",
+        triggerCount,
+        regenCount
+    );
+}
+
 
 public void OnPluginEnd()
 {
@@ -72,6 +93,7 @@ public void OnGameFrame()
     GatherPlayerSnapshot(client, player);
     GatherPlayerInput(client, input);
     UpdateRocketSlots();
+    GatherMapData(client);
 
     WriteRecordingRow(GetGameTickCount(), player, input, g_RocketFired[client]);
 
