@@ -4,6 +4,7 @@
 
 bool g_Recording = false;
 Handle g_RecordingFile = INVALID_HANDLE;
+Handle g_MapDataFile = INVALID_HANDLE;
 int g_RecordRowNumber = 0;
 
 #include "Shared/courseRuntime.inc"
@@ -95,11 +96,15 @@ public void OnGameFrame()
     UpdateRocketSlots();
     GatherMapData(client);
 
-    WriteRecordingRow(GetGameTickCount(), player, input, g_RocketFired[client]);
+    int tick = GetGameTickCount();
+
+    WriteRecordingRow(tick, player, input, g_RocketFired[client]);
+    WriteMapDataBinary(tick);
 
     g_RocketFired[client] = false;
     ClearFinishedRocketSlots();
 }
+
 
 public void Event_PlayerSpawn(Event event, const char[] name, bool dontBroadcast)
 {

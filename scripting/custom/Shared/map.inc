@@ -35,21 +35,3 @@ void GatherMapData(int client)
         sizeof(g_Rays) * sizeof(g_Rays[0])
     );
 }
-
-int ResolveMapDataTarget(int client)
-{
-    if (client > 0 && IsClientInGame(client) && !IsClientSourceTV(client) && !IsClientReplay(client))
-    {
-        return client;
-    }
-
-    for (int i = 1; i <= MaxClients; i++)
-    {
-        if (IsClientInGame(i) && !IsClientSourceTV(i) && !IsClientReplay(i))
-        {
-            return i;
-        }
-    }
-
-    return 0;
-}
