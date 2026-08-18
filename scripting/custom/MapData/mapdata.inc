@@ -18,6 +18,20 @@ enum
 #define VOXEL_COUNT_Z 16
 #define VOXEL_COUNT    (VOXEL_COUNT_X * VOXEL_COUNT_Y * VOXEL_COUNT_Z)
 
+#define RAY_COUNT_OMNI 64
+#define RAY_LOOK_INDEX 64
+#define RAY_COUNT      (RAY_COUNT_OMNI + 1)
+#define RAY_MAX_RANGE  2048.0
+
+enum struct RayData
+{
+    int flags;
+    float geomDistance;
+    float geomNormal[3];
+    float noGrenadesDistance;
+    float teleportDistance;
+}
+
 native bool MapData_BuildVoxels(
     const float origin[3],
     const float angles[3],
@@ -34,3 +48,11 @@ native int MapData_CacheStaticProps();
 // Call from OnMapStart and teamplay_round_start (edicts respawn).
 // Do not call from OnPluginStart — the map is not loaded yet.
 native int MapData_CacheTriggers();
+
+native bool MapData_TraceRays(
+    const float origin[3],
+    const float angles[3],
+    const float eyeOrigin[3],
+    RayData rays[RAY_COUNT],
+    int maxlength
+);
