@@ -2,9 +2,23 @@
 #include <sdktools>
 #include "MapData/mapdata.inc"
 
+#define RAY_DRAW_LIFE 1.0
+#define RAY_DRAW_WIDTH 0.4
+#define RAY_DRAW_CYCLE 0.9
+#define RAY_DRAW_BATCH 22
+#define RAY_OFFSET_Z 32.0
+
 int g_VoxelFlags[VOXEL_COUNT];
 RayData g_Rays[RAY_COUNT];
 bool g_RaysReady = false;
+
+int g_BeamSprite = -1;
+bool g_RayDrawEnabled = false;
+int g_RayDrawClient = 0;
+int g_RayDrawCycleStartTick = 0;
+
+float g_RayStart[RAY_COUNT][3];
+float g_RayEnd[RAY_COUNT][3];
 
 static void CacheStaticProps()
 {
@@ -25,7 +39,6 @@ static void CacheMapGeometry()
     CacheStaticProps();
     CacheTriggers();
 }
-
 
 static void PrintRayLine(int client, int index)
 {
@@ -64,25 +77,180 @@ static void PrintRayLine(int client, int index)
     }
 }
 
+static void FibonacciWorldDir(int index, float yawDegrees, float dir[3])
+{
+    float y = 1.0 - ((float(index) + 0.5) / float(RAY_COUNT_OMNI)) * 2.0;
+    float radiusSq = 1.0 - y * y;
+    float radius = (radiusSq > 0.0) ? SquareRoot(radiusSq) : 0.0;
+    float theta = float(index) * FLOAT_PI * (3.0 - SquareRoot(5.0));
+
+    float lx = Cosine(theta) * radius;
+    float ly = Sine(theta) * radius;
+    float lz = y;
+
+    float yaw = DegToRad(yawDegrees);
+    float cy = Cosine(yaw);
+    float sy = Sine(yaw);
+
+    dir[0] = sy * lx + cy * ly;
+    dir[1] = -cy * lx + sy * ly;
+    dir[2] = lz;
+}
+
+static void CaptureRaySnapshot(
+    const float origin[3],
+    const float angles[3],
+    const float eyeOrigin[3]
+)
+{
+    float omniOrigin[3];
+    omniOrigin[0] = origin[0];
+    omniOrigin[1] = origin[1];
+    omniOrigin[2] = origin[2] + RAY_OFFSET_Z;
+
+    for (int i = 0; i < RAY_COUNT_OMNI; i++)
+    {
+        float dir[3];
+        FibonacciWorldDir(i, angles[1], dir);
+
+        g_RayStart[i][0] = omniOrigin[0];
+        g_RayStart[i][1] = omniOrigin[1];
+        g_RayStart[i][2] = omniOrigin[2];
+
+        float length = g_Rays[i].geomDistance;
+
+        g_RayEnd[i][0] = omniOrigin[0] + dir[0] * length;
+        g_RayEnd[i][1] = omniOrigin[1] + dir[1] * length;
+        g_RayEnd[i][2] = omniOrigin[2] + dir[2] * length;
+    }
+
+    float lookDir[3];
+    GetAngleVectors(angles, lookDir, NULL_VECTOR, NULL_VECTOR);
+
+    g_RayStart[RAY_LOOK_INDEX][0] = eyeOrigin[0];
+    g_RayStart[RAY_LOOK_INDEX][1] = eyeOrigin[1];
+    g_RayStart[RAY_LOOK_INDEX][2] = eyeOrigin[2];
+
+    float lookLength = g_Rays[RAY_LOOK_INDEX].geomDistance;
+
+    g_RayEnd[RAY_LOOK_INDEX][0] = eyeOrigin[0] + lookDir[0] * lookLength;
+    g_RayEnd[RAY_LOOK_INDEX][1] = eyeOrigin[1] + lookDir[1] * lookLength;
+    g_RayEnd[RAY_LOOK_INDEX][2] = eyeOrigin[2] + lookDir[2] * lookLength;
+}
+
+static void DrawRayBeam(int client, int index)
+{
+    int color[4];
+
+    if (index == RAY_LOOK_INDEX)
+    {
+        color[0] = 0;
+        color[1] = 0;
+        color[2] = 255;
+        color[3] = 255;
+    }
+    else
+    {
+        color[0] = 0;
+        color[1] = 255;
+        color[2] = 0;
+        color[3] = 255;
+    }
+
+    TE_SetupBeamPoints(
+        g_RayStart[index],
+        g_RayEnd[index],
+        g_BeamSprite,
+        0,
+        0,
+        0,
+        RAY_DRAW_LIFE,
+        RAY_DRAW_WIDTH,
+        RAY_DRAW_WIDTH,
+        0,
+        0.0,
+        color,
+        0
+    );
+
+    TE_SendToClient(client);
+}
+
+static void DrawRayBatch(int client, int startIndex, int count)
+{
+    int endIndex = startIndex + count;
+
+    if (endIndex > RAY_COUNT)
+    {
+        endIndex = RAY_COUNT;
+    }
+
+    for (int i = startIndex; i < endIndex; i++)
+    {
+        DrawRayBeam(client, i);
+    }
+}
+
 public void OnPluginStart()
 {
     RegConsoleCmd("sm_voxeltest", Command_VoxelTest);
     RegConsoleCmd("sm_raytest", Command_RayTest);
     RegConsoleCmd("sm_printrays", Command_PrintRays);
+    RegConsoleCmd("sm_raysdraw", Command_RaysDraw);
     HookEvent("teamplay_round_start", Event_OnRoundStart, EventHookMode_PostNoCopy);
-    PrintToServer("[VoxelTest] Loaded. Use sm_voxeltest, sm_raytest, sm_printrays.");
+    PrintToServer("[VoxelTest] Loaded. Use sm_voxeltest, sm_raytest, sm_printrays, sm_raysdraw.");
     // Map geometry is cached in OnMapStart. The map is not loaded here.
 }
 
 public void OnMapStart()
 {
     g_RaysReady = false;
+    g_RayDrawEnabled = false;
+    g_BeamSprite = PrecacheModel("materials/sprites/laserbeam.vmt");
     CacheMapGeometry();
 }
 
 public void Event_OnRoundStart(Event event, const char[] name, bool dontBroadcast)
 {
     CacheTriggers();
+}
+
+public void OnGameFrame()
+{
+    if (!g_RayDrawEnabled)
+    {
+        return;
+    }
+
+    int client = g_RayDrawClient;
+
+    if (client <= 0 || !IsClientInGame(client) || g_BeamSprite <= 0)
+    {
+        g_RayDrawEnabled = false;
+        return;
+    }
+
+    int cycleTicks = RoundToNearest(RAY_DRAW_CYCLE / GetTickInterval());
+
+    if (cycleTicks < 4)
+    {
+        cycleTicks = 4;
+    }
+
+    int phase = (GetGameTickCount() - g_RayDrawCycleStartTick) % cycleTicks;
+
+    if (phase == 0)
+    {
+        DrawRayBatch(client, 0, RAY_DRAW_BATCH);
+    }
+    else if (phase == 1)
+    {
+        DrawRayBatch(client, RAY_DRAW_BATCH, RAY_DRAW_BATCH);
+    }
+    else if (phase == 2)
+    {
+        DrawRayBatch(client, RAY_DRAW_BATCH * 2, RAY_COUNT - RAY_DRAW_BATCH * 2);
+    }
 }
 
 public Action Command_VoxelTest(int client, int args)
@@ -208,6 +376,11 @@ public Action Command_RayTest(int client, int args)
 
     g_RaysReady = success;
 
+    if (success)
+    {
+        CaptureRaySnapshot(origin, angles, eyeOrigin);
+    }
+
     int geomHits = 0;
     int clipHits = 0;
     int waterHits = 0;
@@ -297,5 +470,33 @@ public Action Command_PrintRays(int client, int args)
         PrintRayLine(client, i);
     }
 
+    return Plugin_Handled;
+}
+
+public Action Command_RaysDraw(int client, int args)
+{
+    if (client <= 0 || !IsClientInGame(client))
+    {
+        ReplyToCommand(client, "[VoxelTest] Must be used in-game.");
+        return Plugin_Handled;
+    }
+
+    if (g_RayDrawEnabled && g_RayDrawClient == client)
+    {
+        g_RayDrawEnabled = false;
+        PrintToChat(client, "[VoxelTest] Ray draw off.");
+        return Plugin_Handled;
+    }
+
+    if (!g_RaysReady)
+    {
+        ReplyToCommand(client, "[VoxelTest] No ray data. Use sm_raytest first.");
+        return Plugin_Handled;
+    }
+
+    g_RayDrawClient = client;
+    g_RayDrawEnabled = true;
+    g_RayDrawCycleStartTick = GetGameTickCount();
+    PrintToChat(client, "[VoxelTest] Ray draw on. Frozen at last sm_raytest.");
     return Plugin_Handled;
 }
