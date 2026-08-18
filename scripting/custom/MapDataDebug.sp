@@ -8,6 +8,7 @@
 #include "MapDataDebug/raycasts.inc"
 #include "MapDataDebug/voxelsDraw.inc"
 #include "MapDataDebug/raycastsDraw.inc"
+#include "MapDataDebug/profile.inc"
 
 public Plugin myinfo =
 {
@@ -34,6 +35,7 @@ public void OnMapStart()
     g_RaysReady = false;
     g_RayDrawEnabled = false;
     g_VoxelDrawEnabled = false;
+    g_ProfileEnabled = false;
     g_BeamSprite = PrecacheModel("materials/sprites/laserbeam.vmt");
 }
 
@@ -41,6 +43,11 @@ public void OnGameFrame()
 {
     TickRayDraw();
     TickVoxelDraw();
+
+    if (g_ProfileEnabled)
+    {
+        RecordProfileFrame();
+    }
 }
 
 void PrintMapDataUsage(int client)
@@ -52,6 +59,7 @@ void PrintMapDataUsage(int client)
     ReplyToCommand(client, "  sm_mapdata printRays");
     ReplyToCommand(client, "  sm_mapdata drawRays");
     ReplyToCommand(client, "  sm_mapdata drawVoxels");
+    ReplyToCommand(client, "  sm_mapdata profile");
 }
 
 void Command_Cache(int client)
@@ -120,6 +128,11 @@ public Action Command_MapData(int client, int args)
         return Command_VoxelsDraw(client);
     }
 
+    if (StrEqual(command, "profile", false))
+    {
+        return Command_Profile(client);
+    }
+
     ReplyToCommand(
         client,
         "[MapDataDebug] Unknown command: %s",
@@ -129,3 +142,4 @@ public Action Command_MapData(int client, int args)
     PrintMapDataUsage(client);
     return Plugin_Handled;
 }
+

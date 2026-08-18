@@ -22,6 +22,7 @@ enum
 #define RAY_LOOK_INDEX 64
 #define RAY_COUNT      (RAY_COUNT_OMNI + 1)
 #define RAY_MAX_RANGE  2048.0
+#define RAY_LOOK_RANGE 15000.0
 
 enum struct RayData
 {

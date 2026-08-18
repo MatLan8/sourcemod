@@ -34,6 +34,14 @@ bool g_VoxelDrawEnabled = false;
 int g_VoxelDrawClient = 0;
 int g_VoxelDrawTick = 0;
 
+bool g_ProfileEnabled = false;
+int g_ProfileClient = 0;
+int g_ProfileTickCount = 0;
+float g_ProfileVoxelTimeTotal = 0.0;
+float g_ProfileRayTimeTotal = 0.0;
+float g_ProfileVoxelTimeMax = 0.0;
+float g_ProfileRayTimeMax = 0.0;
+
 Profiler g_NativeProfiler;
 
 void StartNativeTimer()
