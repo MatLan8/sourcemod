@@ -1,19 +1,19 @@
 #include <sourcemod>
 #include <sdktools>
-#include "MapData/voxel.inc"
+#include "MapData/mapdata.inc"
 
 int g_VoxelFlags[VOXEL_COUNT];
 
 static void CacheStaticProps()
 {
-    int count = Voxel_CacheStaticProps();
+    int count = MapData_CacheStaticProps();
 
     PrintToServer("[VoxelTest] Cached %d static props", count);
 }
 
 static void CacheTriggers()
 {
-    int count = Voxel_CacheTriggers();
+    int count = MapData_CacheTriggers();
 
     PrintToServer("[VoxelTest] Cached %d triggers", count);
 }
@@ -23,6 +23,7 @@ static void CacheMapGeometry()
     CacheStaticProps();
     CacheTriggers();
 }
+
 
 public void OnPluginStart()
 {
@@ -58,7 +59,7 @@ public Action Command_VoxelTest(int client, int args)
     GetClientAbsOrigin(client, origin);
     GetClientEyeAngles(client, angles);
 
-    bool success = Voxel_BuildCache(
+    bool success = MapData_BuildVoxels(
         origin,
         angles,
         g_VoxelFlags,
