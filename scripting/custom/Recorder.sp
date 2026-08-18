@@ -1,6 +1,7 @@
 #include <sourcemod>
 #include <sdktools>
 #include <sdkhooks>
+#include <profiler>
 
 bool g_Recording = false;
 Handle g_RecordingFile = INVALID_HANDLE;
@@ -15,6 +16,7 @@ int g_RecordRowNumber = 0;
 #include "Shared/player.inc"
 #include "Shared/regenerateTriggers.inc"
 #include "Shared/rocket.inc"
+#include "Recorder/profile.inc"
 #include "Recorder/files.inc"
 
 public Plugin myinfo =
@@ -91,15 +93,33 @@ public void OnGameFrame()
     PlayerSnapshot player;
     PlayerInput input;
 
+    StartRecorderTimer();
     GatherPlayerSnapshot(client, player);
+    g_PlayerSnapshotTime += StopRecorderTimerMs();
+
+    StartRecorderTimer();
     GatherPlayerInput(client, input);
+    g_PlayerInputTime += StopRecorderTimerMs();
+
+    StartRecorderTimer();
     UpdateRocketSlots();
+    g_UpdateRocketSlotsTime += StopRecorderTimerMs();
+
+    StartRecorderTimer();
     GatherMapData(client);
+    g_GatherMapDataTime += StopRecorderTimerMs();
 
     int tick = GetGameTickCount();
 
+    StartRecorderTimer();
     WriteRecordingRow(tick, player, input, g_RocketFired[client]);
+    g_WriteRecordingRowTime += StopRecorderTimerMs();
+
+    StartRecorderTimer();
     WriteMapDataBinary(tick);
+    g_WriteMapDataBinaryTime += StopRecorderTimerMs();
+
+    g_ProfileTickCount++;
 
     g_RocketFired[client] = false;
     ClearFinishedRocketSlots();

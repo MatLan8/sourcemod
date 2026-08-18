@@ -83,6 +83,7 @@ public Action Command_StartRecording(int client, int args)
 
     g_Recording = true;
 
+    ResetRecordingProfile();
     SyncRecorderCheckpoint();
 
     ReplyToCommand(client, "[Recorder] Recording started!");
@@ -99,6 +100,7 @@ public Action Command_StopRecording(int client, int args)
 
     g_Recording = false;
     CloseFiles();
+    PrintRecordingProfile(client);
 
     ReplyToCommand(client, "[Recorder] Recording stopped!");
     return Plugin_Handled;
