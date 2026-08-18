@@ -48,6 +48,8 @@ public Action Command_StartRecording(int client, int args)
 
     g_Recording = true;
 
+    SyncRecorderCheckpoint();
+
     ReplyToCommand(client, "[Recorder] Recording started!");
     return Plugin_Handled;
 }

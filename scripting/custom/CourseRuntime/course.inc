@@ -189,11 +189,24 @@ bool SetCourse(
         checkpointCourse.checkpoints.Length > 0
     )
     {
-        g_CurrentCheckpointIndex = 0;
+        g_CurrentCheckpointIndex = 1;
 
         checkpointCourse.checkpoints.GetArray(
             g_CurrentCheckpointIndex,
             g_CurrentCheckpoint
+        );
+
+        CheckpointData firstCheckpoint;
+        checkpointCourse.checkpoints.GetArray(
+            0,
+            firstCheckpoint
+        );
+
+        TeleportEntity(
+            client,
+            firstCheckpoint.coordinates,
+            NULL_VECTOR,
+            NULL_VECTOR
         );
     }
     else
@@ -339,7 +352,7 @@ bool AdvanceCheckpoint(
     {
         return false;
     }
-    int targetTriggerIndex = targetCheckpointIndex;
+    int targetTriggerIndex = targetCheckpointIndex - 1;
 
     // ========================================================
     // Get target checkpoint.

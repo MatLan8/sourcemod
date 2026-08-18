@@ -16,9 +16,20 @@ public SharedPlugin __pl_courseruntime =
 #endif
 };
 
+enum struct CheckpointData
+{
+    char name[128];
+
+    float coordinates[3];
+}
+
 forward void CourseRuntime_OnCourseDataUpdated();
 
+forward void CourseRuntime_OnCheckpointEntered();
+
 native ArrayList CourseRuntime_GetCurrentCourseCheckpoints();
+
+native void CourseRuntime_GetCurrentCheckpoint(CheckpointData checkpoint);
 
 native ArrayList CourseRuntime_GetCurrentCourseTriggers();
 

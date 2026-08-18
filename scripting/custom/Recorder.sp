@@ -6,14 +6,13 @@ bool g_Recording = false;
 Handle g_RecordingFile = INVALID_HANDLE;
 int g_RecordRowNumber = 0;
 
+#include "Shared/courseRuntime.inc"
 #include "Shared/globals.inc"
 #include "Shared/input.inc"
 #include "Shared/player.inc"
 #include "Shared/regenerateTriggers.inc"
 #include "Shared/rocket.inc"
 #include "Recorder/files.inc"
-
-
 
 public Plugin myinfo =
 {
@@ -38,11 +37,13 @@ public void OnPluginStart()
 public void OnMapStart()
 {
     CacheRegenerateTriggers();
+    SyncRecorderCheckpoint();
 }
 
 public void Event_OnRoundStart(Event event, const char[] name, bool dontBroadcast)
 {
     CacheRegenerateTriggers();
+    SyncRecorderCheckpoint();
 }
 
 public void OnPluginEnd()
@@ -87,4 +88,19 @@ public void Event_PlayerSpawn(Event event, const char[] name, bool dontBroadcast
 public void OnEntityCreated(int entity, const char[] classname)
 {
     HandleRocketEntityCreated(entity, classname);
+}
+
+void SyncRecorderCheckpoint()
+{
+    CourseRuntime_GetCurrentCheckpoint(g_CurrentCheckpoint);
+}
+
+public void CourseRuntime_OnCheckpointEntered()
+{
+    SyncRecorderCheckpoint();
+}
+
+public void CourseRuntime_OnCourseDataUpdated()
+{
+    SyncRecorderCheckpoint();
 }

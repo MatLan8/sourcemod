@@ -3,7 +3,7 @@
 #endif
 #define _shared_globals_included
 
-#define MAX_ROCKET_SLOTS 16
+#define MAX_ROCKET_SLOTS 12
 #define MAP_CONFIG_PATH "data/MapConfigs"
 bool g_RocketFired[MAXPLAYERS + 1];
 int g_PlayerButtons[MAXPLAYERS + 1];
@@ -49,15 +49,4 @@ enum struct RocketSlot
 RocketSlot g_RocketSlots[MAX_ROCKET_SLOTS];
 int g_NextRocketID = 1;
 
-enum struct CheckpointData
-{
-    char name[128];
-
-    float coordinates[3];
-}
-
-char g_CurrentCourseName[128];
-ArrayList g_CurrentCourse;
-
 CheckpointData g_CurrentCheckpoint;
-int g_CurrentCheckpointIndex;

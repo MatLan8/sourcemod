@@ -16,3 +16,17 @@ void FireCourseDataUpdated()
 
     Call_Finish();
 }
+
+void FireCheckpointEntered()
+{
+    if (g_OnCheckpointEntered == null)
+    {
+        return;
+    }
+
+    Call_StartForward(
+        g_OnCheckpointEntered
+    );
+
+    Call_Finish();
+}

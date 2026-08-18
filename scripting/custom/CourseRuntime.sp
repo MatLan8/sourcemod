@@ -54,6 +54,7 @@ public void OnMapStart()
     SetCourse();
 
     FireCourseDataUpdated();
+    FireCheckpointEntered();
 }
 
 
@@ -70,6 +71,7 @@ public void Event_OnRoundStart(Event event, const char[] name, bool dontBroadcas
     SetCourse();
 
     FireCourseDataUpdated();
+    FireCheckpointEntered();
 }
 
 
@@ -238,7 +240,9 @@ public Action Command_CourseRuntime(
     if (StrEqual(command, "loadCheckpoints", false))
     {
         LoadCheckpoints();
+        SetCourse(client);
         FireCourseDataUpdated();
+        FireCheckpointEntered();
         return Plugin_Handled;
     }
 
@@ -260,6 +264,7 @@ public Action Command_CourseRuntime(
         {
             SetCourse(client);
             FireCourseDataUpdated();
+            FireCheckpointEntered();
             return Plugin_Handled;
         }
         if (args == 2)
@@ -289,6 +294,7 @@ public Action Command_CourseRuntime(
                 );
             }
             FireCourseDataUpdated();
+            FireCheckpointEntered();
             return Plugin_Handled;
         }
 
@@ -313,7 +319,7 @@ public Action Command_CourseRuntime(
             StringToInt(indexString)
         );
         FireCourseDataUpdated();
-
+        FireCheckpointEntered();
         return Plugin_Handled;
     }
     else
@@ -334,12 +340,18 @@ void RegisterForwards()
         "CourseRuntime_OnCourseDataUpdated",
         ET_Ignore
     );
+    g_OnCheckpointEntered = CreateGlobalForward(
+        "CourseRuntime_OnCheckpointEntered",
+        ET_Ignore
+    );
 }
 
 public void CheckpointManager_OnConfigChanged()
 {
     LoadCheckpoints();
+    SetCourse();
     FireCourseDataUpdated();
+    FireCheckpointEntered();
 }
 
 public void TriggerManager_OnConfigChanged()
@@ -401,4 +413,9 @@ void ClearCourseRuntimeData()
     g_CurrentCourseIndex = -1;
     g_CurrentCheckpointIndex = -1;
     g_CurrentTriggerIndex = -1;
+
+    g_CurrentCheckpoint.name[0] = '\0';
+    g_CurrentCheckpoint.coordinates[0] = 0.0;
+    g_CurrentCheckpoint.coordinates[1] = 0.0;
+    g_CurrentCheckpoint.coordinates[2] = 0.0;
 }

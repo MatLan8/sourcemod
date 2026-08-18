@@ -13,6 +13,11 @@ void RegisterNatives()
     );
 
     CreateNative(
+        "CourseRuntime_GetCurrentCheckpoint",
+        Native_GetCurrentCheckpoint
+    );
+
+    CreateNative(
         "CourseRuntime_GetCurrentCourseTriggers",
         Native_GetCurrentCourseTriggers
     );
@@ -68,6 +73,19 @@ any Native_GetCurrentCourseCheckpoints(
     return course.checkpoints;
 }
 
+any Native_GetCurrentCheckpoint(
+    Handle plugin,
+    int numParams
+)
+{
+    SetNativeArray(
+        1,
+        g_CurrentCheckpoint,
+        sizeof(g_CurrentCheckpoint)
+    );
+
+    return 0;
+}
 
 // ============================================================
 // Get current course triggers

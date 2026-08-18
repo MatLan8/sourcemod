@@ -52,5 +52,8 @@ public void OnTriggerStartTouch(
         entity
     );
 
-    AdvanceCheckpoint();
+    if (AdvanceCheckpoint(other))
+    {
+        FireCheckpointEntered();
+    }
 }
