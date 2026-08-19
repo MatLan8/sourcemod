@@ -222,6 +222,11 @@ public Action Command_CourseRuntime(
             "  sm_courseRuntime setCourse <courseName> <courseIndex>"
         );
 
+        ReplyToCommand(
+            client,
+            "  sm_courseRuntime advanceCheckpoint <checkpointIndex>"
+        );
+
         
         return Plugin_Handled;
     }
@@ -314,6 +319,41 @@ public Action Command_CourseRuntime(
             StringToInt(indexString)
         );
         FireCourseDataUpdated();
+        return Plugin_Handled;
+    }
+    else if (StrEqual(command, "advanceCheckpoint", false))
+    {
+        if (args < 2)
+        {
+            ReplyToCommand(
+                client,
+                "[CourseRuntime] Usage: sm_courseRuntime advanceCheckpoint <checkpointIndex>"
+            );
+            return Plugin_Handled;
+        }
+
+        char argument[32];
+
+        GetCmdArg(
+            2,
+            argument,
+            sizeof(argument)
+        );
+
+        if (!IsNumericString(argument))
+        {
+            ReplyToCommand(
+                client,
+                "[CourseRuntime] Checkpoint index must be a number."
+            );
+            return Plugin_Handled;
+        }
+
+        AdvanceCheckpoint(
+            client,
+            "",
+            StringToInt(argument)
+        );
         return Plugin_Handled;
     }
     else

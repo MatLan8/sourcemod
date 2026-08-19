@@ -92,7 +92,9 @@ void PrintRecordingProfile(int client)
         g_MaxTime
     );
 
-    ReplyToCommand(
+    if (client != 0)
+    {
+        PrintToChat(
         client,
         "[Recorder] profile time=%d ticks=%d avg snapshot=%.4fms avg input=%.4fms avg rockets=%.4fms avg map=%.4fms avg csv=%.4fms avg bin=%.4fms avg together=%.4fms max=%.4fms",
         RoundFloat(time),
@@ -106,4 +108,5 @@ void PrintRecordingProfile(int client)
         avgTogether,
         g_MaxTime
     );
+    }
 }

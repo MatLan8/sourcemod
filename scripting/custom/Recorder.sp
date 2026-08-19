@@ -140,7 +140,7 @@ public void OnGameFrame()
     }
 
     if (g_CourseComplete) {
-        Command_StopRecording(0, 0);
+        Command_StopRecording(client, 0);
         return;
     }
 

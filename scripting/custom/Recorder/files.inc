@@ -301,7 +301,6 @@ public Action Command_StopRecording(int client, int args)
     CloseFiles();
     PrintRecordingProfile(client);
 
-    ReplyToCommand(client, "[Recorder] Recording stopped!");
     return Plugin_Handled;
 }
 

@@ -344,6 +344,9 @@ bool LoadTriggers()
         "[Trigger] Synchronized %d trigger courses.",
         g_AllCoursesTriggers.Length
     );
+    PrintToServer(
+        "-------------------------------------------"
+    );
 
     return true;
 }
@@ -476,12 +479,6 @@ int SyncTrigger(
 
         triggers.PushArray(
             trigger
-        );
-
-        PrintToServer(
-            "[Trigger] Created \"%s\" (entity %d).",
-            cfg.name,
-            entity
         );
 
         return entity;

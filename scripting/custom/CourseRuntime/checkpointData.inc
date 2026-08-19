@@ -191,7 +191,9 @@ bool LoadCheckpoints()
             return false;
         }
 
-
+        PrintToServer(
+            "-------------------------------------------"
+        );
         do
         {
             char courseName[128];
@@ -281,6 +283,10 @@ bool LoadCheckpoints()
         "[Checkpoint] Loaded %d checkpoint courses.",
         g_AllCoursesCheckpoints.Length
     );
+    PrintToServer(
+        "-------------------------------------------"
+    );
+
 
     return true;
 }

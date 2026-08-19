@@ -46,12 +46,6 @@ void HandleCaptureTrigger(const char[] triggerName)
         g_CaptureTriggers.PushArray(
             captureTrigger
         );
-
-        PrintToServer(
-            "[CaptureTrigger] Registered capture trigger \"%s\" (entity %d)",
-            triggerName,
-            entity
-        );
     }
 }
 

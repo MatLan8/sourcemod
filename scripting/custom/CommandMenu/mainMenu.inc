@@ -23,8 +23,8 @@ void ShowMainMenu(int client)
     );
 
     menu.AddItem(
-        "set_active_course",
-        "Set active course"
+        "course_runtime",
+        "Course Runtime"
     );
 
     menu.AddItem(
@@ -92,9 +92,9 @@ public int MenuHandler_Main(
         return 0;
     }
 
-    if (StrEqual(info, "set_active_course"))
+    if (StrEqual(info, "course_runtime"))
     {
-        ShowCourseMenu(client);
+        ShowCourseRuntimeMenu(client);
         return 0;
     }
     

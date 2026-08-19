@@ -5,6 +5,16 @@
 
 void ShowCourseMenu(int client)
 {
+    if (g_CourseNames == null)
+    {
+        PrintToChat(
+            client,
+            "[CourseRuntime] No courses loaded."
+        );
+        ShowCourseRuntimeMenu(client);
+        return;
+    }
+
     Menu menu = new Menu(MenuHandler_Course);
 
     menu.SetTitle("Set active course");
@@ -59,7 +69,7 @@ public int MenuHandler_Course(
         item == MenuCancel_ExitBack
     )
     {
-        ShowMainMenu(client);
+        ShowCourseRuntimeMenu(client);
         return 0;
     }
 
@@ -84,7 +94,7 @@ public int MenuHandler_Course(
         courseIndex
     );
 
-    ShowMainMenu(client);
+    ShowCourseRuntimeMenu(client);
 
     return 0;
 }

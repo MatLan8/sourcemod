@@ -8,6 +8,7 @@
 #include "CommandMenu/checkpointCourseMenu.inc"
 #include "CommandMenu/checkpointMenu.inc"
 #include "CommandMenu/triggerMenu.inc"
+#include "CommandMenu/courseRuntimeMenu.inc"
 #include "CommandMenu/courseMenu.inc"
 #include "CommandMenu/recorderMenu.inc"
 
@@ -56,4 +57,5 @@ public void CourseRuntime_OnCourseDataUpdated()
     }
     g_AllCoursesCheckpoints = CourseRuntime_GetAllCoursesCheckpoints();
     g_CourseNames = CourseRuntime_GetCourseNames();
+    g_CurrentCourseCheckpoints = CourseRuntime_GetCurrentCourseCheckpoints();
 }

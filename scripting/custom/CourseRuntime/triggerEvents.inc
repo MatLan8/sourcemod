@@ -39,19 +39,6 @@ public void OnTriggerStartTouch(
     // Current trigger entered.
     // --------------------------------------------------------
 
-    PrintToChat(
-        other,
-        "[Trigger] ENTER: %s",
-        g_CurrentTrigger.name
-    );
-
-    PrintToServer(
-        "[Trigger] Client %d ENTERED \"%s\" (entity %d)",
-        other,
-        g_CurrentTrigger.name,
-        entity
-    );
-
     if (AdvanceCheckpoint(other))
     {
         FireCheckpointEntered();
