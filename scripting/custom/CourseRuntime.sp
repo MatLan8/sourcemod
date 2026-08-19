@@ -54,7 +54,6 @@ public void OnMapStart()
     SetCourse();
 
     FireCourseDataUpdated();
-    FireCheckpointEntered();
 }
 
 
@@ -71,7 +70,6 @@ public void Event_OnRoundStart(Event event, const char[] name, bool dontBroadcas
     SetCourse();
 
     FireCourseDataUpdated();
-    FireCheckpointEntered();
 }
 
 
@@ -242,7 +240,6 @@ public Action Command_CourseRuntime(
         LoadCheckpoints();
         SetCourse(client);
         FireCourseDataUpdated();
-        FireCheckpointEntered();
         return Plugin_Handled;
     }
 
@@ -264,7 +261,6 @@ public Action Command_CourseRuntime(
         {
             SetCourse(client);
             FireCourseDataUpdated();
-            FireCheckpointEntered();
             return Plugin_Handled;
         }
         if (args == 2)
@@ -294,7 +290,6 @@ public Action Command_CourseRuntime(
                 );
             }
             FireCourseDataUpdated();
-            FireCheckpointEntered();
             return Plugin_Handled;
         }
 
@@ -319,7 +314,6 @@ public Action Command_CourseRuntime(
             StringToInt(indexString)
         );
         FireCourseDataUpdated();
-        FireCheckpointEntered();
         return Plugin_Handled;
     }
     else
@@ -344,6 +338,10 @@ void RegisterForwards()
         "CourseRuntime_OnCheckpointEntered",
         ET_Ignore
     );
+    g_OnCourseComplete = CreateGlobalForward(
+        "CourseRuntime_OnCourseComplete",
+        ET_Ignore
+    );
 }
 
 public void CheckpointManager_OnConfigChanged()
@@ -351,7 +349,6 @@ public void CheckpointManager_OnConfigChanged()
     LoadCheckpoints();
     SetCourse();
     FireCourseDataUpdated();
-    FireCheckpointEntered();
 }
 
 public void TriggerManager_OnConfigChanged()
@@ -359,6 +356,7 @@ public void TriggerManager_OnConfigChanged()
     LoadTriggers();
     FireCourseDataUpdated();
 }
+
 
 void ClearCourseRuntimeData()
 {

@@ -30,3 +30,17 @@ void FireCheckpointEntered()
 
     Call_Finish();
 }
+
+void FireCourseComplete()
+{
+    if (g_OnCourseComplete == null)
+    {
+        return;
+    }
+
+    Call_StartForward(
+        g_OnCourseComplete
+    );
+
+    Call_Finish();
+}

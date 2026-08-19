@@ -135,5 +135,14 @@ public Action OnCaptureTriggerStartTouch(
         g_CurrentCaptureTrigger.name
     );
 
+    PrintToServer(
+        "[CaptureTrigger] Client %d ENTERED \"%s\" (entity %d)",
+        other,
+        g_CurrentCaptureTrigger.name,
+        entity
+    );
+
+    FireCourseComplete();
+
     return Plugin_Continue;
 }

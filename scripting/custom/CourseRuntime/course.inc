@@ -215,9 +215,9 @@ bool SetCourse(
 
         g_CurrentCheckpoint.name[0] = '\0';
 
-        g_CurrentCheckpoint.coordinates[0] = -1;
-        g_CurrentCheckpoint.coordinates[1] = -1;
-        g_CurrentCheckpoint.coordinates[2] = -1;
+        g_CurrentCheckpoint.coordinates[0] = -1.0;
+        g_CurrentCheckpoint.coordinates[1] = -1.0;
+        g_CurrentCheckpoint.coordinates[2] = -1.0;
     }
 
 

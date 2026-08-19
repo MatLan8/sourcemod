@@ -27,6 +27,8 @@ forward void CourseRuntime_OnCourseDataUpdated();
 
 forward void CourseRuntime_OnCheckpointEntered();
 
+forward void CourseRuntime_OnCourseComplete();
+
 native ArrayList CourseRuntime_GetCurrentCourseCheckpoints();
 
 native void CourseRuntime_GetCurrentCheckpoint(CheckpointData checkpoint);

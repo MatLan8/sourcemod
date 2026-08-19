@@ -8,6 +8,8 @@ Handle g_RecordingFile = INVALID_HANDLE;
 Handle g_MapDataFile = INVALID_HANDLE;
 int g_RecordRowNumber = 0;
 char g_RecordingType[64];
+bool g_CheckpointReached = false;
+bool g_CourseComplete = false;
 
 #include "Shared/courseRuntime.inc"
 #include "Shared/mapDataNatives.inc"
@@ -116,7 +118,7 @@ public void OnGameFrame()
     int tick = GetGameTickCount();
 
     StartRecorderTimer();
-    WriteRecordingRow(tick, player, input, g_RocketFired[client]);
+    WriteRecordingRow(tick, player, input, g_RocketFired[client], g_CheckpointReached, g_CourseComplete);
     g_WriteRecordingRowTime += StopRecorderTimerMs();
 
     StartRecorderTimer();
@@ -126,6 +128,8 @@ public void OnGameFrame()
     g_ProfileTickCount++;
 
     g_RocketFired[client] = false;
+    g_CheckpointReached = false;
+    
     ClearFinishedRocketSlots();
 
     float tickMs = StopRecorderTickTimerMs();
@@ -134,8 +138,14 @@ public void OnGameFrame()
     {
         g_MaxTime = tickMs;
     }
-}
 
+    if (g_CourseComplete) {
+        Command_StopRecording(0, 0);
+        return;
+    }
+
+    g_CourseComplete = false;
+}
 
 public void Event_PlayerSpawn(Event event, const char[] name, bool dontBroadcast)
 {
@@ -156,6 +166,19 @@ void SyncRecorderCheckpoint()
 public void CourseRuntime_OnCheckpointEntered()
 {
     SyncRecorderCheckpoint();
+
+    if (g_Recording)
+    {
+        g_CheckpointReached = true;
+    }
+}
+
+public void CourseRuntime_OnCourseComplete()
+{
+    if (g_Recording)
+    {
+        g_CourseComplete = true;
+    }
 }
 
 public void CourseRuntime_OnCourseDataUpdated()

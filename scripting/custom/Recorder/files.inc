@@ -119,6 +119,8 @@ public Action Command_StartRecording(int client, int args)
 
     ResetRocketSlots();
     ResetRocketFiredEvents();
+    g_CheckpointReached = false;
+    g_CourseComplete = false;
     WriteRecordingHeader();
     g_RecordRowNumber = 0;
 
@@ -333,7 +335,7 @@ void WriteRecordingHeader()
     char header[8192];
     char rocketHeader[512];
 
-    strcopy(header, sizeof(header), "row,tick,player_position_x,player_position_y,player_position_z,checkpoint_x,checkpoint_y,checkpoint_z,player_velocity_x,player_velocity_y,player_velocity_z,player_view_pitch,player_view_yaw,player_regenerate,player_grounded,player_water_level,player_ammo,input_forward,input_backward,input_left,input_right,input_jump,input_duck,input_attack,event_rocket_fired");
+    strcopy(header, sizeof(header), "row,tick,player_position_x,player_position_y,player_position_z,checkpoint_x,checkpoint_y,checkpoint_z,player_velocity_x,player_velocity_y,player_velocity_z,player_view_pitch,player_view_yaw,player_regenerate,player_grounded,player_water_level,player_ammo,input_forward,input_backward,input_left,input_right,input_jump,input_duck,input_attack,event_rocket_fired,event_checkpoint_reached,event_course_complete");
 
     for (int i = 0; i < MAX_ROCKET_SLOTS; i++)
     {
@@ -344,13 +346,13 @@ void WriteRecordingHeader()
     WriteCsvLine(header);
 }
 
-void WriteRecordingRow(int tick, PlayerSnapshot player, PlayerInput input, bool rocketFired)
+void WriteRecordingRow(int tick, PlayerSnapshot player, PlayerInput input, bool rocketFired, bool checkpointReached, bool courseComplete)
 {
     char row[8192];
     char rocketRow[512];
     g_RecordRowNumber++;
 
-    Format(row, sizeof(row), "%d,%d,%.3f,%.3f,%.3f,%.3f,%.3f,%.3f,%.3f,%.3f,%.3f,%.3f,%.3f,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d", g_RecordRowNumber, tick, player.position[0], player.position[1], player.position[2], g_CurrentCheckpoint.coordinates[0], g_CurrentCheckpoint.coordinates[1], g_CurrentCheckpoint.coordinates[2], player.velocity[0], player.velocity[1], player.velocity[2], player.viewAngles[0], player.viewAngles[1], player.regenerate, player.grounded, player.waterLevel, player.ammo, input.pressedForward, input.pressedBackward, input.pressedLeft, input.pressedRight, input.pressedJump, input.pressedDuck, input.pressedAttack, rocketFired);
+    Format(row, sizeof(row), "%d,%d,%.3f,%.3f,%.3f,%.3f,%.3f,%.3f,%.3f,%.3f,%.3f,%.3f,%.3f,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d", g_RecordRowNumber, tick, player.position[0], player.position[1], player.position[2], g_CurrentCheckpoint.coordinates[0], g_CurrentCheckpoint.coordinates[1], g_CurrentCheckpoint.coordinates[2], player.velocity[0], player.velocity[1], player.velocity[2], player.viewAngles[0], player.viewAngles[1], player.regenerate, player.grounded, player.waterLevel, player.ammo, input.pressedForward, input.pressedBackward, input.pressedLeft, input.pressedRight, input.pressedJump, input.pressedDuck, input.pressedAttack, rocketFired, checkpointReached, courseComplete);
 
     for (int i = 0; i < MAX_ROCKET_SLOTS; i++)
     {

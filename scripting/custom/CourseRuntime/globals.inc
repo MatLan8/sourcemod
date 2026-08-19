@@ -71,3 +71,4 @@ CaptureTriggerData g_CurrentCaptureTrigger;
 // forwards
 Handle g_OnCourseDataUpdated;
 Handle g_OnCheckpointEntered;
+Handle g_OnCourseComplete;
