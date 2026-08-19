@@ -39,66 +39,97 @@ public Action Command_SetRecordingType(int client, int args)
 
 public Action Command_StartRecording(int client, int args)
 {
+    return StartRecording(client, args, false);
+}
+
+public Action Command_RerecordLastClip(int client, int args)
+{
+    if (args != 0)
+    {
+        ReplyToCommand(client, "[Recorder] Usage: sm_rerecord");
+        return Plugin_Handled;
+    }
+
+    return StartRecording(client, 0, true);
+}
+
+Action StartRecording(int client, int args, bool rerecordLast)
+{
     if (g_Recording)
     {
         ReplyToCommand(client, "[Recorder] Already recording!");
         return Plugin_Handled;
     }
 
-    char dir[PLATFORM_MAX_PATH];
     char csvPath[PLATFORM_MAX_PATH];
     char binPath[PLATFORM_MAX_PATH];
-    char fileStem[PLATFORM_MAX_PATH];
 
-    if (args >= 1)
+    if (rerecordLast)
     {
-        char recordName[128];
-        GetCmdArg(1, recordName, sizeof(recordName));
-
-        if (!IsSafeRecordingName(recordName))
+        if (g_LastRecordingCsvPath[0] == '\0' || g_LastMapDataPath[0] == '\0')
         {
-            ReplyToCommand(client, "[Recorder] Name must be letters, digits, '_' or '-'.");
+            ReplyToCommand(client, "[Recorder] No previous recording to rerecord.");
             return Plugin_Handled;
         }
 
-        if (!EnsureRecordingsFolder(client, RECORDINGS_OTHER, dir, sizeof(dir)))
-        {
-            return Plugin_Handled;
-        }
-
-        strcopy(fileStem, sizeof(fileStem), recordName);
+        strcopy(csvPath, sizeof(csvPath), g_LastRecordingCsvPath);
+        strcopy(binPath, sizeof(binPath), g_LastMapDataPath);
     }
     else
     {
-        if (g_RecordingType[0] == '\0')
+        char dir[PLATFORM_MAX_PATH];
+        char fileStem[PLATFORM_MAX_PATH];
+
+        if (args >= 1)
         {
-            ReplyToCommand(client, "[Recorder] No recording type set. Use sm_setrecordingtype <type> or sm_record <name>.");
-            return Plugin_Handled;
+            char recordName[128];
+            GetCmdArg(1, recordName, sizeof(recordName));
+
+            if (!IsSafeRecordingName(recordName))
+            {
+                ReplyToCommand(client, "[Recorder] Name must be letters, digits, '_' or '-'.");
+                return Plugin_Handled;
+            }
+
+            if (!EnsureRecordingsFolder(client, RECORDINGS_OTHER, dir, sizeof(dir)))
+            {
+                return Plugin_Handled;
+            }
+
+            strcopy(fileStem, sizeof(fileStem), recordName);
+        }
+        else
+        {
+            if (g_RecordingType[0] == '\0')
+            {
+                ReplyToCommand(client, "[Recorder] No recording type set. Use sm_setrecordingtype <type> or sm_record <name>.");
+                return Plugin_Handled;
+            }
+
+            if (!EnsureRecordingsFolder(client, g_RecordingType, dir, sizeof(dir)))
+            {
+                return Plugin_Handled;
+            }
+
+            char mapName[128];
+            GetRecordingMapName(mapName, sizeof(mapName));
+
+            int nextNumber = FindNextRecordingNumber(dir, mapName);
+
+            if (nextNumber > RECORDING_NUMBER_MAX)
+            {
+                ReplyToCommand(client, "[Recorder] No free recording number left for this map (001-999).");
+                return Plugin_Handled;
+            }
+
+            Format(fileStem, sizeof(fileStem), "%s__%03d", mapName, nextNumber);
         }
 
-        if (!EnsureRecordingsFolder(client, g_RecordingType, dir, sizeof(dir)))
-        {
-            return Plugin_Handled;
-        }
-
-        char mapName[128];
-        GetRecordingMapName(mapName, sizeof(mapName));
-
-        int nextNumber = FindNextRecordingNumber(dir, mapName);
-
-        if (nextNumber > RECORDING_NUMBER_MAX)
-        {
-            ReplyToCommand(client, "[Recorder] No free recording number left for this map (001-999).");
-            return Plugin_Handled;
-        }
-
-        Format(fileStem, sizeof(fileStem), "%s__%03d", mapName, nextNumber);
+        Format(csvPath, sizeof(csvPath), "%s/%s.csv", dir, fileStem);
+        Format(binPath, sizeof(binPath), "%s/%s.map.bin", dir, fileStem);
     }
 
-    Format(csvPath, sizeof(csvPath), "%s/%s.csv", dir, fileStem);
-    Format(binPath, sizeof(binPath), "%s/%s.map.bin", dir, fileStem);
-
-    // Named takes under recordings/other replace existing files ("w" / "wb" truncate).
+    // Rerecorded and named takes replace existing files ("w" / "wb" truncate).
     g_RecordingFile = OpenFile(csvPath, "w");
 
     if (g_RecordingFile == INVALID_HANDLE)
@@ -117,6 +148,9 @@ public Action Command_StartRecording(int client, int args)
         return Plugin_Handled;
     }
 
+    strcopy(g_LastRecordingCsvPath, sizeof(g_LastRecordingCsvPath), csvPath);
+    strcopy(g_LastMapDataPath, sizeof(g_LastMapDataPath), binPath);
+
     ResetRocketSlots();
     ResetRocketFiredEvents();
     g_CheckpointReached = false;
@@ -129,7 +163,13 @@ public Action Command_StartRecording(int client, int args)
     ResetRecordingProfile();
     SyncRecorderCheckpoint();
 
-    ReplyToCommand(client, "[Recorder] Recording started: %s", csvPath);
+    ReplyToCommand(
+        client,
+        rerecordLast
+            ? "[Recorder] Rerecording: %s"
+            : "[Recorder] Recording started: %s",
+        csvPath
+    );
     return Plugin_Handled;
 }
 

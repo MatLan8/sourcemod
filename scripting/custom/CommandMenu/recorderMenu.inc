@@ -24,6 +24,11 @@ void ShowRecorderMenu(int client)
         "Stop recording"
     );
 
+    menu.AddItem(
+        "rerecord_last_clip",
+        "Rerecord last clip"
+    );
+
     menu.ExitBackButton = true;
 
     menu.Display(
@@ -95,6 +100,17 @@ public int MenuHandler_Recorder(
         return 0;
     }
 
+    if (StrEqual(info, "rerecord_last_clip")) {
+
+        FakeClientCommand(
+            client,
+            "sm_rerecord"
+        );
+
+        ShowRecorderMenu(client);
+        return 0;
+    }
+
     return 0;
 }
 
@@ -126,6 +142,11 @@ void ShowRecorderTypesMenu(int client)
     );
 
     menu.AddItem(
+        "wallpogo",
+        "Wallpogo"
+    );
+
+    menu.AddItem(
         "doubleSync",
         "Double sync"
     );
@@ -133,6 +154,11 @@ void ShowRecorderTypesMenu(int client)
     menu.AddItem(
         "tripleSync",
         "Triple sync"
+    );
+
+    menu.AddItem(
+        "jurf",
+        "Jurf"
     );
 
     menu.AddItem(

@@ -44,6 +44,7 @@ public Action Command_Menu(
     return Plugin_Handled;
 }
 
+
 public void CourseRuntime_OnCourseDataUpdated()
 {
     if (g_CourseNames != null)
@@ -59,3 +60,4 @@ public void CourseRuntime_OnCourseDataUpdated()
     g_CourseNames = CourseRuntime_GetCourseNames();
     g_CurrentCourseCheckpoints = CourseRuntime_GetCurrentCourseCheckpoints();
 }
+

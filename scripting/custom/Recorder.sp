@@ -8,6 +8,8 @@ Handle g_RecordingFile = INVALID_HANDLE;
 Handle g_MapDataFile = INVALID_HANDLE;
 int g_RecordRowNumber = 0;
 char g_RecordingType[64];
+char g_LastRecordingCsvPath[PLATFORM_MAX_PATH];
+char g_LastMapDataPath[PLATFORM_MAX_PATH];
 bool g_CheckpointReached = false;
 bool g_CourseComplete = false;
 
@@ -34,6 +36,7 @@ public Plugin myinfo =
 public void OnPluginStart()
 {
     RegConsoleCmd("sm_record", Command_StartRecording);
+    RegConsoleCmd("sm_rerecord", Command_RerecordLastClip);
     RegConsoleCmd("sm_stoprecord", Command_StopRecording);
     RegConsoleCmd("sm_setrecordingtype", Command_SetRecordingType);
 
