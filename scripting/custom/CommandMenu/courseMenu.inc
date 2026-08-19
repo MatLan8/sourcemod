@@ -1,77 +1,13 @@
-#if defined _command_courseRuntimeMenu_included
+#if defined _command_courseMenu_included
     #endinput
 #endif
-#define _command_courseRuntimeMenu_included
-
-void ShowCourseRuntimeMenu(int client)
-{
-    Menu menu = new Menu(MenuHandler_CourseRuntime);
-
-    menu.SetTitle("Course runtime menu");
-
-    menu.AddItem(
-        "set_active_course",
-        "Set active course"
-    );
-
-    menu.ExitBackButton = true;
-
-    menu.Display(
-        client,
-        MENU_TIME_FOREVER
-    );
-}
-
-public int MenuHandler_CourseRuntime(
-    Menu menu,
-    MenuAction action,
-    int client,
-    int item
-)
-{
-    if (action == MenuAction_End)
-    {
-        delete menu;
-        return 0;
-    }
-
-    if (
-        action == MenuAction_Cancel &&
-        item == MenuCancel_ExitBack
-    )
-    {
-        ShowMainMenu(client);
-        return 0;
-    }
-
-    if (action != MenuAction_Select)
-    {
-        return 0;
-    }
-
-    char info[64];
-
-    menu.GetItem(
-        item,
-        info,
-        sizeof(info)
-    );
-
-    if (StrEqual(info, "set_active_course"))
-    {
-        ShowCourseMenu(client);
-        return 0;
-    }
-
-    return 0;
-}
-
+#define _command_courseMenu_included
 
 void ShowCourseMenu(int client)
 {
     Menu menu = new Menu(MenuHandler_Course);
 
-    menu.SetTitle("Select active course");
+    menu.SetTitle("Set active course");
 
     for (int i = 0; i < g_CourseNames.Length; i++)
     {
@@ -123,7 +59,7 @@ public int MenuHandler_Course(
         item == MenuCancel_ExitBack
     )
     {
-        ShowCourseRuntimeMenu(client);
+        ShowMainMenu(client);
         return 0;
     }
 
@@ -148,7 +84,7 @@ public int MenuHandler_Course(
         courseIndex
     );
 
-    ShowCourseMenu(client);
+    ShowMainMenu(client);
 
     return 0;
 }

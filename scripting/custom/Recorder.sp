@@ -7,6 +7,7 @@ bool g_Recording = false;
 Handle g_RecordingFile = INVALID_HANDLE;
 Handle g_MapDataFile = INVALID_HANDLE;
 int g_RecordRowNumber = 0;
+char g_RecordingType[64];
 
 #include "Shared/courseRuntime.inc"
 #include "Shared/mapDataNatives.inc"
@@ -32,6 +33,7 @@ public void OnPluginStart()
 {
     RegConsoleCmd("sm_record", Command_StartRecording);
     RegConsoleCmd("sm_stoprecord", Command_StopRecording);
+    RegConsoleCmd("sm_setrecordingtype", Command_SetRecordingType);
 
     HookEvent("player_spawn", Event_PlayerSpawn);
     HookEvent("teamplay_round_start", Event_OnRoundStart, EventHookMode_PostNoCopy);
@@ -93,6 +95,8 @@ public void OnGameFrame()
     PlayerSnapshot player;
     PlayerInput input;
 
+    StartRecorderTickTimer();
+
     StartRecorderTimer();
     GatherPlayerSnapshot(client, player);
     g_PlayerSnapshotTime += StopRecorderTimerMs();
@@ -123,6 +127,13 @@ public void OnGameFrame()
 
     g_RocketFired[client] = false;
     ClearFinishedRocketSlots();
+
+    float tickMs = StopRecorderTickTimerMs();
+
+    if (tickMs > g_MaxTime)
+    {
+        g_MaxTime = tickMs;
+    }
 }
 
 

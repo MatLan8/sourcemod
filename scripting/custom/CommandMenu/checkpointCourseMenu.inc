@@ -1,7 +1,7 @@
-#if defined _command_courseMenu_included
+#if defined _command_checkpointCourseMenu_included
     #endinput
 #endif
-#define _command_courseMenu_included
+#define _command_checkpointCourseMenu_included
 
 void ShowCheckpointCourseMenu(int client)
 {

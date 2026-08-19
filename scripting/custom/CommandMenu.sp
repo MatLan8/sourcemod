@@ -8,7 +8,8 @@
 #include "CommandMenu/checkpointCourseMenu.inc"
 #include "CommandMenu/checkpointMenu.inc"
 #include "CommandMenu/triggerMenu.inc"
-#include "CommandMenu/courseRuntimeMenu.inc"
+#include "CommandMenu/courseMenu.inc"
+#include "CommandMenu/recorderMenu.inc"
 
 public Plugin myinfo =
 {
@@ -17,6 +18,7 @@ public Plugin myinfo =
     description = "Basic in-game debug menu",
     version = "1.0"
 };
+
 
 public void OnPluginStart()
 {
@@ -52,6 +54,6 @@ public void CourseRuntime_OnCourseDataUpdated()
 
         g_CourseNames = null;
     }
-    g_AllCoursesCheckpoints = CourseRuntime_GetAllCoursesCheckpoints()
+    g_AllCoursesCheckpoints = CourseRuntime_GetAllCoursesCheckpoints();
     g_CourseNames = CourseRuntime_GetCourseNames();
 }

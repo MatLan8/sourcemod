@@ -3,12 +3,6 @@
 #endif
 #define _commandMenu_globals_included
 
-enum struct CheckpointData
-{
-    char name[128];
-    float coordinates[3];
-}
-
 enum struct CourseCheckpoints
 {
     char courseName[128];

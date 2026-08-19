@@ -3,61 +3,102 @@
 #endif
 #define _recorder_files_included
 
+#define RECORDINGS_ROOT "data/recordings"
+#define RECORDINGS_OTHER "other"
+#define RECORDING_NUMBER_MAX 999
+
+public Action Command_SetRecordingType(int client, int args)
+{
+    if (args < 1)
+    {
+        if (g_RecordingType[0] == '\0')
+        {
+            ReplyToCommand(client, "[Recorder] Recording type is not set. Usage: sm_setrecordingtype <type>");
+        }
+        else
+        {
+            ReplyToCommand(client, "[Recorder] Recording type: %s", g_RecordingType);
+        }
+
+        return Plugin_Handled;
+    }
+
+    char recordingType[64];
+    GetCmdArg(1, recordingType, sizeof(recordingType));
+
+    if (!IsSafeRecordingName(recordingType))
+    {
+        ReplyToCommand(client, "[Recorder] Type must be letters, digits, '_' or '-'.");
+        return Plugin_Handled;
+    }
+
+    strcopy(g_RecordingType, sizeof(g_RecordingType), recordingType);
+    ReplyToCommand(client, "[Recorder] Recording type set to \"%s\".", g_RecordingType);
+    return Plugin_Handled;
+}
+
 public Action Command_StartRecording(int client, int args)
 {
-    char recordName[128];
     if (g_Recording)
     {
         ReplyToCommand(client, "[Recorder] Already recording!");
         return Plugin_Handled;
     }
-    if (args < 1)
-    {
-        ReplyToCommand(client, "[Recorder] Usage: sm_record <name>");
-        return Plugin_Handled;
-    }
-    GetCmdArg(
-        1,
-        recordName,
-        sizeof(recordName)
-    );
 
     char dir[PLATFORM_MAX_PATH];
     char csvPath[PLATFORM_MAX_PATH];
     char binPath[PLATFORM_MAX_PATH];
+    char fileStem[PLATFORM_MAX_PATH];
 
-    BuildPath(
-        Path_SM,
-        dir,
-        sizeof(dir),
-        "data/%s",
-        recordName
-    );
-
-    if (!DirExists(dir) && !CreateDirectory(dir))
+    if (args >= 1)
     {
-        ReplyToCommand(client, "[Recorder] Failed creating recording folder!");
-        return Plugin_Handled;
+        char recordName[128];
+        GetCmdArg(1, recordName, sizeof(recordName));
+
+        if (!IsSafeRecordingName(recordName))
+        {
+            ReplyToCommand(client, "[Recorder] Name must be letters, digits, '_' or '-'.");
+            return Plugin_Handled;
+        }
+
+        if (!EnsureRecordingsFolder(client, RECORDINGS_OTHER, dir, sizeof(dir)))
+        {
+            return Plugin_Handled;
+        }
+
+        strcopy(fileStem, sizeof(fileStem), recordName);
+    }
+    else
+    {
+        if (g_RecordingType[0] == '\0')
+        {
+            ReplyToCommand(client, "[Recorder] No recording type set. Use sm_setrecordingtype <type> or sm_record <name>.");
+            return Plugin_Handled;
+        }
+
+        if (!EnsureRecordingsFolder(client, g_RecordingType, dir, sizeof(dir)))
+        {
+            return Plugin_Handled;
+        }
+
+        char mapName[128];
+        GetRecordingMapName(mapName, sizeof(mapName));
+
+        int nextNumber = FindNextRecordingNumber(dir, mapName);
+
+        if (nextNumber > RECORDING_NUMBER_MAX)
+        {
+            ReplyToCommand(client, "[Recorder] No free recording number left for this map (001-999).");
+            return Plugin_Handled;
+        }
+
+        Format(fileStem, sizeof(fileStem), "%s__%03d", mapName, nextNumber);
     }
 
-    BuildPath(
-        Path_SM,
-        csvPath,
-        sizeof(csvPath),
-        "data/%s/%s.csv",
-        recordName,
-        recordName
-    );
+    Format(csvPath, sizeof(csvPath), "%s/%s.csv", dir, fileStem);
+    Format(binPath, sizeof(binPath), "%s/%s.map.bin", dir, fileStem);
 
-    BuildPath(
-        Path_SM,
-        binPath,
-        sizeof(binPath),
-        "data/%s/%s.map.bin",
-        recordName,
-        recordName
-    );
-
+    // Named takes under recordings/other replace existing files ("w" / "wb" truncate).
     g_RecordingFile = OpenFile(csvPath, "w");
 
     if (g_RecordingFile == INVALID_HANDLE)
@@ -86,8 +127,164 @@ public Action Command_StartRecording(int client, int args)
     ResetRecordingProfile();
     SyncRecorderCheckpoint();
 
-    ReplyToCommand(client, "[Recorder] Recording started!");
+    ReplyToCommand(client, "[Recorder] Recording started: %s", csvPath);
     return Plugin_Handled;
+}
+
+bool IsSafeRecordingName(const char[] name)
+{
+    if (name[0] == '\0')
+    {
+        return false;
+    }
+
+    for (int i = 0; name[i] != '\0'; i++)
+    {
+        int ch = name[i];
+
+        if (
+            (ch >= 'a' && ch <= 'z') ||
+            (ch >= 'A' && ch <= 'Z') ||
+            (ch >= '0' && ch <= '9') ||
+            ch == '_' ||
+            ch == '-'
+        )
+        {
+            continue;
+        }
+
+        return false;
+    }
+
+    return true;
+}
+
+void GetRecordingMapName(char[] mapName, int maxlength)
+{
+    GetCurrentMap(mapName, maxlength);
+
+    int start = 0;
+
+    for (int i = 0; mapName[i] != '\0'; i++)
+    {
+        if (mapName[i] == '/' || mapName[i] == '\\')
+        {
+            start = i + 1;
+        }
+    }
+
+    if (start > 0)
+    {
+        char baseName[128];
+        strcopy(baseName, sizeof(baseName), mapName[start]);
+        strcopy(mapName, maxlength, baseName);
+    }
+
+    for (int i = 0; mapName[i] != '\0'; i++)
+    {
+        int ch = mapName[i];
+
+        if (
+            (ch >= 'a' && ch <= 'z') ||
+            (ch >= 'A' && ch <= 'Z') ||
+            (ch >= '0' && ch <= '9') ||
+            ch == '_' ||
+            ch == '-'
+        )
+        {
+            continue;
+        }
+
+        mapName[i] = '_';
+    }
+}
+
+bool EnsureRecordingsFolder(int client, const char[] typeName, char[] dir, int maxlength)
+{
+    char recordingsRoot[PLATFORM_MAX_PATH];
+
+    BuildPath(Path_SM, recordingsRoot, sizeof(recordingsRoot), RECORDINGS_ROOT);
+
+    if (!DirExists(recordingsRoot) && !CreateDirectory(recordingsRoot, 511))
+    {
+        ReplyToCommand(client, "[Recorder] Failed creating folder: %s", RECORDINGS_ROOT);
+        return false;
+    }
+
+    BuildPath(Path_SM, dir, maxlength, "%s/%s", RECORDINGS_ROOT, typeName);
+
+    if (!DirExists(dir) && !CreateDirectory(dir, 511))
+    {
+        ReplyToCommand(client, "[Recorder] Failed creating folder: %s/%s", RECORDINGS_ROOT, typeName);
+        return false;
+    }
+
+    return true;
+}
+
+int ParseRecordingNumber(const char[] suffix)
+{
+    if (
+        strlen(suffix) < 5 ||
+        !IsCharNumeric(suffix[0]) ||
+        !IsCharNumeric(suffix[1]) ||
+        !IsCharNumeric(suffix[2]) ||
+        suffix[3] != '.'
+    )
+    {
+        return 0;
+    }
+
+    if (
+        StrEqual(suffix[3], ".csv") ||
+        StrEqual(suffix[3], ".map.bin")
+    )
+    {
+        return StringToInt(suffix);
+    }
+
+    return 0;
+}
+
+int FindNextRecordingNumber(const char[] dir, const char[] mapName)
+{
+    DirectoryListing listing = OpenDirectory(dir);
+
+    if (listing == null)
+    {
+        return 1;
+    }
+
+    char fileName[PLATFORM_MAX_PATH];
+    char prefix[PLATFORM_MAX_PATH];
+    FileType fileType;
+    int maxNumber = 0;
+
+    Format(prefix, sizeof(prefix), "%s__", mapName);
+    int prefixLen = strlen(prefix);
+
+    while (listing.GetNext(fileName, sizeof(fileName), fileType))
+    {
+        if (fileType != FileType_File)
+        {
+            continue;
+        }
+
+        if (strncmp(fileName, prefix, prefixLen, false) != 0)
+        {
+            continue;
+        }
+
+        int number = ParseRecordingNumber(fileName[prefixLen]);
+
+        if (number > maxNumber)
+        {
+            maxNumber = number;
+        }
+    }
+
+    delete listing;
+    return maxNumber + 1;
 }
 
 public Action Command_StopRecording(int client, int args)
@@ -123,6 +320,14 @@ void CloseFiles()
     }
 }
 
+// WriteFileLine formats through a 2048-byte buffer and truncates.
+// Header (~4k) and busy rocket rows can exceed that; write the string directly.
+void WriteCsvLine(const char[] line)
+{
+    WriteFileString(g_RecordingFile, line, false);
+    WriteFileString(g_RecordingFile, "\n", false);
+}
+
 void WriteRecordingHeader()
 {
     char header[8192];
@@ -136,7 +341,7 @@ void WriteRecordingHeader()
         StrCat(header, sizeof(header), rocketHeader);
     }
 
-    WriteFileLine(g_RecordingFile, "%s", header);
+    WriteCsvLine(header);
 }
 
 void WriteRecordingRow(int tick, PlayerSnapshot player, PlayerInput input, bool rocketFired)
@@ -161,7 +366,7 @@ void WriteRecordingRow(int tick, PlayerSnapshot player, PlayerInput input, bool 
         StrCat(row, sizeof(row), rocketRow);
     }
 
-    WriteFileLine(g_RecordingFile, "%s", row);
+    WriteCsvLine(row);
 }
 
 void WriteMapDataBinary(int tick)

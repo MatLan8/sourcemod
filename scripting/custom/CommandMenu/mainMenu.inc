@@ -23,13 +23,18 @@ void ShowMainMenu(int client)
     );
 
     menu.AddItem(
-        "course_runtime",
-        "Course menu"
+        "set_active_course",
+        "Set active course"
+    );
+
+    menu.AddItem(
+        "recorder",
+        "Recorder"
     );
 
     menu.AddItem(
         "checkpoints",
-        "Checkpoints"
+        "Goto"
     );
 
     menu.AddItem(
@@ -87,9 +92,15 @@ public int MenuHandler_Main(
         return 0;
     }
 
-    if (StrEqual(info, "course_runtime"))
+    if (StrEqual(info, "set_active_course"))
     {
-        ShowCourseRuntimeMenu(client);
+        ShowCourseMenu(client);
+        return 0;
+    }
+    
+    if (StrEqual(info, "recorder"))
+    {
+        ShowRecorderMenu(client);
         return 0;
     }
 
